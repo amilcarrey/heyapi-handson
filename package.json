@@ -1,0 +1,23 @@
+{
+  "name": "heyapi-handson",
+  "version": "0.0.0",
+  "description": "PoC: SDK TypeScript autogenerado desde OpenAPI con @hey-api/openapi-ts. Target: https://earn.turtle.xyz/v1/docs/openapi.json",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "scripts": {
+    "codegen": "openapi-ts",
+    "typecheck": "tsc --noEmit",
+    "example": "tsx examples/basic.ts"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.13.1"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.97.1",
+    "@types/node": "^25.8.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "packageManager": "pnpm@10.11.0"
+}

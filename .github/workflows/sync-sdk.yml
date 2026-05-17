@@ -1,0 +1,58 @@
+name: Sync SDK from OpenAPI
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Diario a las 06:00 UTC
+    - cron: "0 6 * * *"
+  # Cuando tengas el repo del API, sumar esto y disparar repository_dispatch
+  # desde el merge a main del repo del API:
+  # repository_dispatch:
+  #   types: [openapi-updated]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate SDK from OpenAPI spec
+        run: pnpm codegen
+
+      - name: Verify typecheck still passes
+        run: pnpm typecheck
+
+      - name: Create Pull Request if SDK changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore(sdk): regenerate from openapi spec"
+          title: "chore(sdk): sync from openapi spec"
+          body: |
+            Auto-generated PR — el OpenAPI spec cambió y este PR trae el SDK regenerado.
+
+            **Antes de mergear:**
+            - [ ] Revisar el diff de `src/client/` para confirmar que los cambios son esperados
+            - [ ] Verificar que no haya breaking changes silenciosos (campos removidos, tipos cambiados, endpoints eliminados)
+            - [ ] Si hay breaking changes, sumar un changeset major bump (cuando hayas configurado changesets)
+
+            Triggered by: `${{ github.event_name }}`
+          branch: chore/sync-sdk
+          delete-branch: true
+          add-paths: |
+            src/client/**
