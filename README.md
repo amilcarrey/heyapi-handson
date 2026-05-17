@@ -22,15 +22,27 @@ pnpm example           # correr examples/basic.ts (necesita TURTLE_API_KEY)
 ## Uso
 
 ```ts
-import { createTurtleClient } from './src';
+import { createTurtleV1Client, createTurtleV2Client, v1, v2 } from './src';
 
-const turtle = createTurtleClient({
-  apiKey: process.env.TURTLE_API_KEY!,
-  baseUrl: 'https://earn.turtle.xyz',
-});
+const apiV1 = createTurtleV1Client({ apiKey, baseUrl: 'https://earn.turtle.xyz' });
+const opps = await apiV1.getOpportunities();
 
-const opps = await turtle.getOpportunities();
+const apiV2 = createTurtleV2Client({ apiKey, baseUrl: 'https://earn.turtle.xyz' });
+const chains = await apiV2.handlersV2GetChainsHandler();
+
+// Tipos por versión:
+const opp: v1.Opportunity = /* ... */;
 ```
+
+## Múltiples specs / múltiples APIs
+
+`openapi-ts.config.ts` exporta un **array de configs**: cada entry es un codegen
+independiente con su propio `input`, `output` y filtros.
+
+- **Mismo API, distinta versión**: dos entries con el mismo `input` y filtros
+  `parser.filters.operations.include` por path (regex `^[A-Z]+ \/v1\/`).
+- **Otra API entera**: un entry más con otro `input`, `output: './src/client-otra'`
+  y su propio wrapper `createOtraClient.ts`. Mismo patrón.
 
 ## Workflow de sync
 

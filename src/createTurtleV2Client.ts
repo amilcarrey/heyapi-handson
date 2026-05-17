@@ -1,27 +1,25 @@
-import { createClient, createConfig } from "./client/client";
-import * as sdk from "./client/sdk.gen";
+import { createClient, createConfig } from "./client-v2/client";
+import * as sdk from "./client-v2/sdk.gen";
 
-export interface CreateTurtleClientOptions {
+export interface CreateTurtleV2ClientOptions {
   apiKey: string;
   baseUrl?: string;
 }
 
-type SdkModule = typeof sdk;
+type SdkV2 = typeof sdk;
 
-export function createTurtleClient({
+export function createTurtleV2Client({
   apiKey,
   baseUrl = "https://earn.turtle.xyz",
-}: CreateTurtleClientOptions): SdkModule {
+}: CreateTurtleV2ClientOptions): SdkV2 {
   const localClient = createClient(
     createConfig({
       baseUrl,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { Authorization: `Bearer ${apiKey}` },
     }),
   );
 
-  return new Proxy({} as SdkModule, {
+  return new Proxy({} as SdkV2, {
     get(_target, prop: string | symbol) {
       const value = (sdk as Record<string | symbol, unknown>)[prop];
       if (typeof value !== "function") return value;
