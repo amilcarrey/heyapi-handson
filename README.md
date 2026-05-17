@@ -59,7 +59,19 @@ Más adelante: sumar `repository_dispatch` desde el merge a main del repo del AP
 
 - `@hey-api/openapi-ts` con plugins `client-fetch` + `sdk` (flat) + `typescript`
 - Tree-shakeable: cada endpoint es una función exportada
-- Auth via wrapper `createTurtleClient` que inyecta `Authorization: Bearer <apiKey>` en un client local
+- v1 expone wrapper parametrizable `createTurtleV1Client({ apiKey, baseUrl })`
+- v2 expone funciones pre-configuradas via `runtimeConfigPath` (lee env)
+
+### Features del codegen aplicadas
+
+| Feature | Dónde se ve |
+|---|---|
+| **Array de configs** | `openapi-ts.config.ts` exporta `defineConfig([v1, v2, ...])` |
+| **Filtros por path** | `parser.filters.operations.include` separa v1 y v2 de la misma spec |
+| **Naming custom** | `sdk.operations.methodName.name` strip `handlersV\d+` / `Handler$` |
+| **Enums como objetos JS** | `typescript.enums: 'javascript'` (evita footgun de TS enums) |
+| **Runtime config** | `client-fetch.runtimeConfigPath` apunta a `hey-api.runtime.ts` (solo v2) |
+| **Split por tag** | `parser.hooks.symbols.getFilePath` parte el SDK en `sdk/<tag>.gen.ts` (solo v1) |
 
 ## Pendientes para producción
 

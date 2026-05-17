@@ -55,9 +55,7 @@ export type Options<
  *
  * Returns all supported chains with pagination. Chains are filtered to active status only.
  */
-export const handlersV2GetChainsHandler = <
-  ThrowOnError extends boolean = false,
->(
+export const v2GetChains = <ThrowOnError extends boolean = false>(
   options?: Options<HandlersV2GetChainsHandlerData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
@@ -71,7 +69,7 @@ export const handlersV2GetChainsHandler = <
  *
  * Get combined historical time-series (TVL, share price, base APY) for a vault, bucketed by interval over [from, to].
  */
-export const handlersV2GetOpportunityHistoricalHandler = <
+export const v2GetOpportunityHistorical = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<HandlersV2GetOpportunityHistoricalHandlerData, ThrowOnError>,
@@ -90,7 +88,7 @@ export const handlersV2GetOpportunityHistoricalHandler = <
  *
  * Adjacent-pair simple-rate (non-compound) APR per bucket over [from, to]. Reward APR is reserved for future rewards indexing and is always 0.
  */
-export const handlersV2GetOpportunityHistoricalAprHandler = <
+export const v2GetOpportunityHistoricalApr = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
@@ -112,7 +110,7 @@ export const handlersV2GetOpportunityHistoricalAprHandler = <
  *
  * Adjacent-pair compound APY per bucket over [from, to]. Reward APY is reserved for future rewards indexing and is always 0.
  */
-export const handlersV2GetOpportunityHistoricalApyHandler = <
+export const v2GetOpportunityHistoricalApy = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
@@ -134,7 +132,7 @@ export const handlersV2GetOpportunityHistoricalApyHandler = <
  *
  * Get historical share-price time-series for a vault, bucketed by interval over [from, to]. Native is denominated in the vault's underlying (base) asset; USD is null when the underlying price is unavailable for the bucket.
  */
-export const handlersV2GetOpportunityHistoricalSharePriceHandler = <
+export const v2GetOpportunityHistoricalSharePrice = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
@@ -156,7 +154,7 @@ export const handlersV2GetOpportunityHistoricalSharePriceHandler = <
  *
  * Get historical TVL time-series for a vault, bucketed by interval over [from, to]. Values are denominated in the vault's underlying (base) asset; USD is null when the underlying price is unavailable for the bucket.
  */
-export const handlersV2GetOpportunityHistoricalTvlHandler = <
+export const v2GetOpportunityHistoricalTvl = <
   ThrowOnError extends boolean = false,
 >(
   options: Options<
@@ -178,9 +176,7 @@ export const handlersV2GetOpportunityHistoricalTvlHandler = <
  *
  * Returns supported DeFi protocols with pagination. A protocol is an organization referenced as a lending protocol or vault infra provider in an earn product.
  */
-export const handlersV2GetProtocolsHandler = <
-  ThrowOnError extends boolean = false,
->(
+export const v2GetProtocols = <ThrowOnError extends boolean = false>(
   options?: Options<HandlersV2GetProtocolsHandlerData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
@@ -194,9 +190,7 @@ export const handlersV2GetProtocolsHandler = <
  *
  * Returns active supported tokens with pagination. Optional filters: chainId (numeric) and search (partial match on address, name or symbol).
  */
-export const handlersV2GetTokensHandler = <
-  ThrowOnError extends boolean = false,
->(
+export const v2GetTokens = <ThrowOnError extends boolean = false>(
   options?: Options<HandlersV2GetTokensHandlerData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<
@@ -210,9 +204,7 @@ export const handlersV2GetTokensHandler = <
  *
  * Returns a single active token identified by its numeric chain ID and contract address.
  */
-export const handlersV2GetTokenByAddressHandler = <
-  ThrowOnError extends boolean = false,
->(
+export const v2GetTokenByAddress = <ThrowOnError extends boolean = false>(
   options: Options<HandlersV2GetTokenByAddressHandlerData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<

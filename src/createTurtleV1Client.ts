@@ -1,5 +1,7 @@
 import { createClient, createConfig } from "./client-v1/client";
-import * as sdk from "./client-v1/sdk.gen";
+// El `index.ts` del cliente re-exporta todas las funciones (incluidas las que
+// están en `sdk/*.gen.ts` por el split por tag).
+import * as sdk from "./client-v1";
 
 export interface CreateTurtleV1ClientOptions {
   apiKey: string;
