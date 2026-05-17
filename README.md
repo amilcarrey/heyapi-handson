@@ -14,10 +14,14 @@ Spec de prueba: `https://earn.turtle.xyz/v1/docs/openapi.json` (Turtle Earn API)
 
 ```bash
 pnpm install           # instalar deps
-pnpm codegen           # regenerar src/client/ desde el OpenAPI
+pnpm codegen           # regenerar src/client-v1/ y src/client-v2/ desde el OpenAPI
 pnpm typecheck         # validar tipos
-pnpm example           # correr examples/basic.ts (necesita TURTLE_API_KEY)
+pnpm example           # correr examples/basic.ts (smoke test v1 + v2)
+pnpm example:zod       # correr examples/with-zod.ts (validación runtime con zod)
 ```
+
+`examples/with-tanstack.tsx` no se corre acá (necesita React) — está como
+snippet documentado de cómo se usaría el plugin TanStack Query.
 
 ## Uso
 
@@ -72,6 +76,8 @@ Más adelante: sumar `repository_dispatch` desde el merge a main del repo del AP
 | **Enums como objetos JS** | `typescript.enums: 'javascript'` (evita footgun de TS enums) |
 | **Runtime config** | `client-fetch.runtimeConfigPath` apunta a `hey-api.runtime.ts` (solo v2) |
 | **Split por tag** | `parser.hooks.symbols.getFilePath` parte el SDK en `sdk/<tag>.gen.ts` (solo v1) |
+| **Zod schemas** | plugin `zod` genera `zod.gen.ts` con un schema por cada tipo. `safeParse(response)` detecta drift backend/spec |
+| **TanStack Query** | plugin `@tanstack/react-query` genera `<op>Options/QueryKey/Mutation` para `useQuery`/`useMutation` |
 
 ## Pendientes para producción
 

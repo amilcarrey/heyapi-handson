@@ -8,16 +8,19 @@
   "scripts": {
     "codegen": "openapi-ts",
     "typecheck": "tsc --noEmit",
-    "example": "tsx examples/basic.ts"
+    "example": "tsx examples/basic.ts",
+    "example:zod": "tsx examples/with-zod.ts"
   },
   "dependencies": {
     "@hey-api/client-fetch": "^0.13.1"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.97.1",
+    "@tanstack/react-query": "^5.100.10",
     "@types/node": "^25.8.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "zod": "^4.4.3"
   },
   "packageManager": "pnpm@10.11.0"
 }

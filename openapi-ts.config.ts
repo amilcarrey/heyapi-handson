@@ -32,6 +32,22 @@ const typescriptPlugin = {
   enums: "javascript" as const,
 };
 
+// Plugin Zod: genera schemas paralelos a los tipos. Útil para:
+//  - Validar respuestas del API en runtime (detectar drift backend)
+//  - Validar inputs antes de enviarlos
+//  - Inferir tipos zod (`z.infer<typeof schema>`)
+const zodPlugin = {
+  name: "zod" as const,
+  // Zod 4 es default. Si tu app está en zod 3, poné `compatibilityVersion: 3`.
+};
+
+// Plugin TanStack React Query: genera para cada operación helpers tipo
+// `*Options()`, `*Mutation()`, `*QueryKey()`, `*InfiniteOptions()` que se
+// spreadean en `useQuery`/`useMutation`/`useInfiniteQuery`.
+const tanstackPlugin = {
+  name: "@tanstack/react-query" as const,
+};
+
 export default defineConfig([
   // ─── Turtle Earn API — v1 (patrón "wrapper parametrizable") ────────────────
   // El consumidor llama `createTurtleV1Client({ apiKey, baseUrl })` para crear
@@ -70,7 +86,13 @@ export default defineConfig([
         },
       },
     },
-    plugins: ["@hey-api/client-fetch", sdkPlugin, typescriptPlugin],
+    plugins: [
+      "@hey-api/client-fetch",
+      sdkPlugin,
+      typescriptPlugin,
+      zodPlugin,
+      tanstackPlugin,
+    ],
   },
 
   // ─── Turtle Earn API — v2 (patrón "singleton con runtimeConfigPath") ───────
@@ -92,6 +114,8 @@ export default defineConfig([
       },
       sdkPlugin,
       typescriptPlugin,
+      zodPlugin,
+      tanstackPlugin,
     ],
   },
 
