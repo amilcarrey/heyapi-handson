@@ -3,6 +3,7 @@
 export {
   createItem,
   listAllItems,
+  listGizmos,
   listSprockets,
   listWidgets,
   type Options,
@@ -17,6 +18,9 @@ export type {
   ListAllItemsData,
   ListAllItemsResponse,
   ListAllItemsResponses,
+  ListGizmosData,
+  ListGizmosResponse,
+  ListGizmosResponses,
   ListSprocketsData,
   ListSprocketsResponse,
   ListSprocketsResponses,

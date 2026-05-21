@@ -7,6 +7,8 @@ import type {
   CreateItemResponses,
   ListAllItemsData,
   ListAllItemsResponses,
+  ListGizmosData,
+  ListGizmosResponses,
   ListSprocketsData,
   ListSprocketsResponses,
   ListWidgetsData,
@@ -78,3 +80,14 @@ export const listSprockets = <ThrowOnError extends boolean = false>(
     unknown,
     ThrowOnError
   >({ url: "/v1/sprockets", ...options });
+
+/**
+ * Auto-added listGizmos
+ */
+export const listGizmos = <ThrowOnError extends boolean = false>(
+  options?: Options<ListGizmosData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<ListGizmosResponses, unknown, ThrowOnError>({
+    url: "/v1/gizmos",
+    ...options,
+  });
