@@ -16,8 +16,63 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    outputs:
+      classification: ${{ steps.classify.outputs.classification }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create auto-merge --color 0e8a16 --description "Non-breaking sync, mergea solo" --force
+          gh label create needs-review --color d93f0b --description "Breaking change detectado por oasdiff" --force
+
+      - name: Download fresh faker spec
+        run: |
+          curl -sSfL \
+            https://raw.githubusercontent.com/amilcarrey/openapi-trigger-faker/main/openapi.json \
+            -o /tmp/openapi-faker.new.json
+
+      - name: Classify diff with oasdiff
+        id: classify
+        run: |
+          set +e
+          docker run --rm \
+            -v "$PWD/specs:/specs" \
+            -v /tmp:/tmp \
+            tufin/oasdiff:latest breaking \
+              /specs/openapi-faker.json \
+              /tmp/openapi-faker.new.json \
+              --fail-on ERR
+          breaking_exit=$?
+          set -e
+
+          if [ $breaking_exit -ne 0 ]; then
+            echo "classification=breaking" >> "$GITHUB_OUTPUT"
+            echo "::notice::oasdiff detected BREAKING changes"
+            exit 0
+          fi
+
+          # No breaking. Distinguir minor (cambio estructural) de patch (doc-only).
+          diff_out=$(docker run --rm \
+            -v "$PWD/specs:/specs" \
+            -v /tmp:/tmp \
+            tufin/oasdiff:latest diff \
+              /specs/openapi-faker.json \
+              /tmp/openapi-faker.new.json \
+              --exclude-elements description,examples,title,summary 2>/dev/null || true)
+
+          if [ -z "$diff_out" ]; then
+            echo "classification=patch" >> "$GITHUB_OUTPUT"
+            echo "::notice::oasdiff: doc-only changes"
+          else
+            echo "classification=minor" >> "$GITHUB_OUTPUT"
+            echo "::notice::oasdiff: non-breaking structural changes"
+          fi
+
+      - name: Update cached spec snapshot
+        run: cp /tmp/openapi-faker.new.json specs/openapi-faker.json
 
       - uses: pnpm/action-setup@v4
 
@@ -36,17 +91,22 @@ jobs:
         run: pnpm typecheck
 
       - name: Create Pull Request if SDK changed
+        id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "chore(sdk): regenerate from openapi spec"
-          title: "chore(sdk): sync from openapi spec"
+          commit-message: "chore(sdk): regenerate from openapi spec (${{ steps.classify.outputs.classification }})"
+          title: "chore(sdk): sync from openapi spec [${{ steps.classify.outputs.classification }}]"
           body: |
             Auto-generated PR — el OpenAPI spec cambió y este PR trae el SDK regenerado.
 
-            **Antes de mergear:**
-            - [ ] Revisar el diff de `src/client-v1/` y `src/client-v2/` para confirmar que los cambios son esperados
-            - [ ] Verificar que no haya breaking changes silenciosos (campos removidos, tipos cambiados, endpoints eliminados)
-            - [ ] Si hay breaking changes, sumar un changeset major bump (cuando hayas configurado changesets)
+            **Clasificación:** `${{ steps.classify.outputs.classification }}`
+
+            - `breaking` → revisión manual obligatoria (label `needs-review`)
+            - `minor` / `patch` → auto-merge habilitado (label `auto-merge`)
+
+            **Antes de mergear (si breaking):**
+            - [ ] Revisar el diff de `src/client-*/`
+            - [ ] Adaptar los consumidores del SDK al cambio
 
             **Trigger info**
             - Event: `${{ github.event_name }}`
@@ -54,7 +114,15 @@ jobs:
             - Spec sha256: `${{ github.event.client_payload.spec_sha }}`
           branch: chore/sync-sdk
           delete-branch: true
+          labels: ${{ steps.classify.outputs.classification == 'breaking' && 'needs-review' || 'auto-merge' }}
           add-paths: |
+            specs/openapi-faker.json
             src/client-v1/**
             src/client-v2/**
             src/client-faker/**
+
+      - name: Enable auto-merge for non-breaking PR
+        if: steps.cpr.outputs.pull-request-number && steps.classify.outputs.classification != 'breaking'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}"
