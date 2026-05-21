@@ -3,10 +3,10 @@ name: Sync SDK from OpenAPI
 on:
   workflow_dispatch:
   schedule:
-    # Diario a las 06:00 UTC (fallback si el dispatch del faker falla)
+    # Daily at 06:00 UTC (fallback if the faker dispatch fails)
     - cron: "0 6 * * *"
   repository_dispatch:
-    # Disparado por openapi-trigger-faker cuando openapi.json cambia en main.
+    # Fired by openapi-trigger-faker when openapi.json changes on main.
     types: [openapi-spec-updated]
 
 permissions:
@@ -25,14 +25,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh label create auto-merge --color 0e8a16 --description "Non-breaking sync, mergea solo" --force
-          gh label create needs-review --color d93f0b --description "Breaking change detectado por oasdiff" --force
+          gh label create auto-merge --color 0e8a16 --description "Non-breaking sync, merges itself" --force
+          gh label create needs-review --color d93f0b --description "Breaking change detected by oasdiff" --force
 
       - name: Download fresh faker spec
         env:
-          # Si el trigger es repository_dispatch, viene con el SHA del commit
-          # del faker → bajamos por SHA (URL inmutable, esquiva cache CDN de
-          # la branch). Para workflow_dispatch/schedule cae a `main`.
+          # When triggered by repository_dispatch we pin by SHA (immutable URL,
+          # bypasses raw.githubusercontent.com branch cache). Fallback to `main`
+          # for workflow_dispatch / schedule.
           SOURCE_COMMIT: ${{ github.event.client_payload.source_commit }}
         run: |
           REF="${SOURCE_COMMIT:-main}"
@@ -45,38 +45,87 @@ jobs:
         id: classify
         run: |
           set +e
-          docker run --rm \
+          # Run breaking check, capture exit + output
+          breaking_out=$(docker run --rm \
             -v "$PWD/specs:/specs" \
             -v /tmp:/tmp \
             tufin/oasdiff:latest breaking \
               /specs/openapi-faker.json \
               /tmp/openapi-faker.new.json \
-              --fail-on ERR
+              --fail-on ERR 2>&1)
           breaking_exit=$?
+
+          # Full changelog (markdown) — included in PR body for either case
+          docker run --rm \
+            -v "$PWD/specs:/specs" \
+            -v /tmp:/tmp \
+            tufin/oasdiff:latest changelog \
+              /specs/openapi-faker.json \
+              /tmp/openapi-faker.new.json \
+              --format markup > /tmp/oasdiff-changelog.md 2>/dev/null || true
           set -e
 
           if [ $breaking_exit -ne 0 ]; then
             echo "classification=breaking" >> "$GITHUB_OUTPUT"
             echo "::notice::oasdiff detected BREAKING changes"
-            exit 0
-          fi
-
-          # No breaking. Distinguir minor (cambio estructural) de patch (doc-only).
-          diff_out=$(docker run --rm \
-            -v "$PWD/specs:/specs" \
-            -v /tmp:/tmp \
-            tufin/oasdiff:latest diff \
-              /specs/openapi-faker.json \
-              /tmp/openapi-faker.new.json \
-              --exclude-elements description,examples,title,summary 2>/dev/null || true)
-
-          if [ -z "$diff_out" ]; then
-            echo "classification=patch" >> "$GITHUB_OUTPUT"
-            echo "::notice::oasdiff: doc-only changes"
           else
-            echo "classification=minor" >> "$GITHUB_OUTPUT"
-            echo "::notice::oasdiff: non-breaking structural changes"
+            # No breaking. Tell minor (structural) from patch (doc-only).
+            diff_out=$(docker run --rm \
+              -v "$PWD/specs:/specs" \
+              -v /tmp:/tmp \
+              tufin/oasdiff:latest diff \
+                /specs/openapi-faker.json \
+                /tmp/openapi-faker.new.json \
+                --exclude-elements description,examples,title,summary 2>/dev/null || true)
+
+            if [ -z "$diff_out" ]; then
+              echo "classification=patch" >> "$GITHUB_OUTPUT"
+              echo "::notice::oasdiff: doc-only changes"
+            else
+              echo "classification=minor" >> "$GITHUB_OUTPUT"
+              echo "::notice::oasdiff: non-breaking structural changes"
+            fi
           fi
+
+      - name: Build PR body
+        id: body
+        env:
+          CLASSIFICATION: ${{ steps.classify.outputs.classification }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_COMMIT: ${{ github.event.client_payload.source_commit }}
+          SPEC_SHA: ${{ github.event.client_payload.spec_sha }}
+        run: |
+          changelog="$(cat /tmp/oasdiff-changelog.md 2>/dev/null || echo '_(no changelog produced)_')"
+          if [ -z "${changelog// }" ]; then
+            changelog="_(no structural changes detected by oasdiff)_"
+          fi
+
+          {
+            echo "body<<PR_BODY_EOF"
+            echo "Auto-generated PR — the OpenAPI spec changed and the SDK has been regenerated."
+            echo ""
+            echo "**Classification:** \`${CLASSIFICATION}\`"
+            echo ""
+            echo "- \`breaking\` → manual review required (label \`needs-review\`)"
+            echo "- \`minor\` / \`patch\` → auto-merge enabled (label \`auto-merge\`)"
+            echo ""
+            echo "## Changelog (oasdiff)"
+            echo ""
+            echo "<details><summary>Show diff details</summary>"
+            echo ""
+            echo '```'
+            echo "${changelog}"
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "## Trigger info"
+            echo ""
+            echo "- Event: \`${EVENT_NAME}\`"
+            echo "- Source commit: \`${SOURCE_COMMIT:-n/a}\`"
+            echo "- Spec sha256: \`${SPEC_SHA:-n/a}\`"
+            echo "PR_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Update cached spec snapshot
         run: cp /tmp/openapi-faker.new.json specs/openapi-faker.json
@@ -103,22 +152,7 @@ jobs:
         with:
           commit-message: "chore(sdk): regenerate from openapi spec (${{ steps.classify.outputs.classification }})"
           title: "chore(sdk): sync from openapi spec [${{ steps.classify.outputs.classification }}]"
-          body: |
-            Auto-generated PR — el OpenAPI spec cambió y este PR trae el SDK regenerado.
-
-            **Clasificación:** `${{ steps.classify.outputs.classification }}`
-
-            - `breaking` → revisión manual obligatoria (label `needs-review`)
-            - `minor` / `patch` → auto-merge habilitado (label `auto-merge`)
-
-            **Antes de mergear (si breaking):**
-            - [ ] Revisar el diff de `src/client-*/`
-            - [ ] Adaptar los consumidores del SDK al cambio
-
-            **Trigger info**
-            - Event: `${{ github.event_name }}`
-            - Source commit: `${{ github.event.client_payload.source_commit }}`
-            - Spec sha256: `${{ github.event.client_payload.spec_sha }}`
+          body: ${{ steps.body.outputs.body }}
           branch: chore/sync-sdk
           delete-branch: true
           labels: ${{ steps.classify.outputs.classification == 'breaking' && 'needs-review' || 'auto-merge' }}
