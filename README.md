@@ -53,11 +53,10 @@ independiente con su propio `input`, `output` y filtros.
 `.github/workflows/sync-sdk.yml` corre:
 
 - Manualmente (`workflow_dispatch`)
-- Cada día a las 06:00 UTC (cron)
+- Cada día a las 06:00 UTC (cron, fallback)
+- En `repository_dispatch` con event `openapi-spec-updated` (disparado por [`openapi-trigger-faker`](../openapi-trigger-faker/) cuando muta `openapi.json` en main)
 
-Si detecta cambios en el spec, abre un PR con `src/client/` regenerado. Vos revisás el diff (¿se rompió algo?), mergeás, y listo.
-
-Más adelante: sumar `repository_dispatch` desde el merge a main del repo del API para trigger real-time.
+Si detecta cambios en el spec, abre un PR con `src/client-v1/` o `src/client-v2/` regenerado.
 
 ## Stack y decisiones
 

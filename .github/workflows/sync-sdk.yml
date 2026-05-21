@@ -3,12 +3,11 @@ name: Sync SDK from OpenAPI
 on:
   workflow_dispatch:
   schedule:
-    # Diario a las 06:00 UTC
+    # Diario a las 06:00 UTC (fallback si el dispatch del faker falla)
     - cron: "0 6 * * *"
-  # Cuando tengas el repo del API, sumar esto y disparar repository_dispatch
-  # desde el merge a main del repo del API:
-  # repository_dispatch:
-  #   types: [openapi-updated]
+  repository_dispatch:
+    # Disparado por openapi-trigger-faker cuando openapi.json cambia en main.
+    types: [openapi-spec-updated]
 
 permissions:
   contents: write
@@ -47,12 +46,16 @@ jobs:
             Auto-generated PR — el OpenAPI spec cambió y este PR trae el SDK regenerado.
 
             **Antes de mergear:**
-            - [ ] Revisar el diff de `src/client/` para confirmar que los cambios son esperados
+            - [ ] Revisar el diff de `src/client-v1/` y `src/client-v2/` para confirmar que los cambios son esperados
             - [ ] Verificar que no haya breaking changes silenciosos (campos removidos, tipos cambiados, endpoints eliminados)
             - [ ] Si hay breaking changes, sumar un changeset major bump (cuando hayas configurado changesets)
 
-            Triggered by: `${{ github.event_name }}`
+            **Trigger info**
+            - Event: `${{ github.event_name }}`
+            - Source commit: `${{ github.event.client_payload.source_commit }}`
+            - Spec sha256: `${{ github.event.client_payload.spec_sha }}`
           branch: chore/sync-sdk
           delete-branch: true
           add-paths: |
-            src/client/**
+            src/client-v1/**
+            src/client-v2/**
