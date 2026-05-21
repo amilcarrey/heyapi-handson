@@ -102,3 +102,21 @@ export type ListGizmosResponses = {
 };
 
 export type ListGizmosResponse = ListGizmosResponses[keyof ListGizmosResponses];
+
+export type ListCogsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/v1/cogs";
+};
+
+export type ListCogsResponses = {
+  /**
+   * OK
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type ListCogsResponse = ListCogsResponses[keyof ListCogsResponses];
