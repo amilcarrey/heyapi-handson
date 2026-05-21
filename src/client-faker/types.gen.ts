@@ -84,3 +84,21 @@ export type ListSprocketsResponses = {
 
 export type ListSprocketsResponse =
   ListSprocketsResponses[keyof ListSprocketsResponses];
+
+export type ListGizmosData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/v1/gizmos";
+};
+
+export type ListGizmosResponses = {
+  /**
+   * OK
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type ListGizmosResponse = ListGizmosResponses[keyof ListGizmosResponses];
