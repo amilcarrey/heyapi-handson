@@ -14,21 +14,22 @@ export type ItemInput = {
   name: string;
 };
 
-export type ListItemsData = {
+export type ListAllItemsData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/v1/items";
 };
 
-export type ListItemsResponses = {
+export type ListAllItemsResponses = {
   /**
    * OK
    */
   200: Array<Item>;
 };
 
-export type ListItemsResponse = ListItemsResponses[keyof ListItemsResponses];
+export type ListAllItemsResponse =
+  ListAllItemsResponses[keyof ListAllItemsResponses];
 
 export type CreateItemData = {
   body: ItemInput;
@@ -45,31 +46,6 @@ export type CreateItemResponses = {
 };
 
 export type CreateItemResponse = CreateItemResponses[keyof CreateItemResponses];
-
-export type GetItemData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: "/v1/items/{id}";
-};
-
-export type GetItemErrors = {
-  /**
-   * Not found
-   */
-  404: unknown;
-};
-
-export type GetItemResponses = {
-  /**
-   * OK
-   */
-  200: Item;
-};
-
-export type GetItemResponse = GetItemResponses[keyof GetItemResponses];
 
 export type ListWidgetsData = {
   body?: never;

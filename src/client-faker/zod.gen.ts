@@ -15,7 +15,7 @@ export const zItemInput = z.object({
 /**
  * OK
  */
-export const zListItemsResponse = z.array(zItem);
+export const zListAllItemsResponse = z.array(zItem);
 
 export const zCreateItemBody = zItemInput;
 
@@ -23,15 +23,6 @@ export const zCreateItemBody = zItemInput;
  * Created
  */
 export const zCreateItemResponse = zItem;
-
-export const zGetItemPath = z.object({
-  id: z.string(),
-});
-
-/**
- * OK
- */
-export const zGetItemResponse = zItem;
 
 /**
  * OK

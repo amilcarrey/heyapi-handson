@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Fake Earn API",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "description": "Synthetic OpenAPI spec for cross-repo regen testing. Mutate via scripts/mutate.mjs."
   },
   "servers": [
@@ -14,7 +14,7 @@
   "paths": {
     "/v1/items": {
       "get": {
-        "operationId": "listItems",
+        "operationId": "listAllItems",
         "summary": "List items",
         "tags": [
           "items"
@@ -61,40 +61,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/v1/items/{id}": {
-      "get": {
-        "operationId": "getItem",
-        "summary": "Get item by id",
-        "tags": [
-          "items"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found"
           }
         }
       }
