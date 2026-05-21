@@ -6,6 +6,7 @@ export {
   listCogs,
   listGizmos,
   listSprockets,
+  listSprocketsV2,
   listWidgets,
   type Options,
 } from "./sdk.gen";
@@ -28,6 +29,9 @@ export type {
   ListSprocketsData,
   ListSprocketsResponse,
   ListSprocketsResponses,
+  ListSprocketsV2Data,
+  ListSprocketsV2Response,
+  ListSprocketsV2Responses,
   ListWidgetsData,
   ListWidgetsResponse,
   ListWidgetsResponses,
