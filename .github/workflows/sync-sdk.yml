@@ -100,14 +100,17 @@ jobs:
             changelog="_(no structural changes detected by oasdiff)_"
           fi
 
+          if [ "$CLASSIFICATION" = "breaking" ]; then
+            status_line=":warning: **Breaking change** — manual review required. Auto-merge is disabled."
+          else
+            status_line=":white_check_mark: Non-breaking (\`${CLASSIFICATION}\`) — auto-merge enabled."
+          fi
+
           {
             echo "body<<PR_BODY_EOF"
             echo "Auto-generated PR — the OpenAPI spec changed and the SDK has been regenerated."
             echo ""
-            echo "**Classification:** \`${CLASSIFICATION}\`"
-            echo ""
-            echo "- \`breaking\` → manual review required (label \`needs-review\`)"
-            echo "- \`minor\` / \`patch\` → auto-merge enabled (label \`auto-merge\`)"
+            echo "${status_line}"
             echo ""
             echo "## Changelog (oasdiff)"
             echo ""
