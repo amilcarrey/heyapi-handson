@@ -120,3 +120,22 @@ export type ListCogsResponses = {
 };
 
 export type ListCogsResponse = ListCogsResponses[keyof ListCogsResponses];
+
+export type ListSprocketsV2Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/v1/sprockets-v2";
+};
+
+export type ListSprocketsV2Responses = {
+  /**
+   * OK
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type ListSprocketsV2Response =
+  ListSprocketsV2Responses[keyof ListSprocketsV2Responses];

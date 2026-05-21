@@ -43,3 +43,8 @@ export const zListGizmosResponse = z.record(z.string(), z.unknown());
  * OK
  */
 export const zListCogsResponse = z.record(z.string(), z.unknown());
+
+/**
+ * OK
+ */
+export const zListSprocketsV2Response = z.record(z.string(), z.unknown());

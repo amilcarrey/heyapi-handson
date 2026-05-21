@@ -15,6 +15,8 @@ import type {
   ListGizmosResponses,
   ListSprocketsData,
   ListSprocketsResponses,
+  ListSprocketsV2Data,
+  ListSprocketsV2Responses,
   ListWidgetsData,
   ListWidgetsResponses,
 } from "./types.gen";
@@ -25,6 +27,7 @@ import {
   zListCogsResponse,
   zListGizmosResponse,
   zListSprocketsResponse,
+  zListSprocketsV2Response,
   zListWidgetsResponse,
 } from "./zod.gen";
 
@@ -178,5 +181,30 @@ export const listCogs = <ThrowOnError extends boolean = false>(
         .parseAsync(data),
     responseValidator: async (data) => await zListCogsResponse.parseAsync(data),
     url: "/v1/cogs",
+    ...options,
+  });
+
+/**
+ * Auto-added listSprocketsV2
+ */
+export const listSprocketsV2 = <ThrowOnError extends boolean = false>(
+  options?: Options<ListSprocketsV2Data, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    ListSprocketsV2Responses,
+    unknown,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) =>
+      await zListSprocketsV2Response.parseAsync(data),
+    url: "/v1/sprockets-v2",
     ...options,
   });
