@@ -13,80 +13,119 @@ permissions:
   contents: write
   pull-requests: write
 
+# Pipeline:
+#   classify  →  regenerate  →  open-pr
+# Each job uploads its outputs as artifacts so the next can pick them up.
+
 jobs:
-  sync:
+  # ────────────────────────────────────────────────────────────────────────
+  # 1) Classify the OpenAPI change as breaking | minor | patch using
+  #    the official oasdiff-action.
+  # ────────────────────────────────────────────────────────────────────────
+  classify:
+    name: Classify spec change
     runs-on: ubuntu-latest
     outputs:
-      classification: ${{ steps.classify.outputs.classification }}
+      classification: ${{ steps.decide.outputs.classification }}
+      new_version: ${{ steps.decide.outputs.new_version }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Ensure labels exist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh label create auto-merge --color 0e8a16 --description "Non-breaking sync, merges itself" --force
-          gh label create needs-review --color d93f0b --description "Breaking change detected by oasdiff" --force
-
       - name: Download fresh faker spec
         env:
-          # When triggered by repository_dispatch we pin by SHA (immutable URL,
-          # bypasses raw.githubusercontent.com branch cache). Fallback to `main`
-          # for workflow_dispatch / schedule.
+          # repository_dispatch pins by SHA (immutable URL, bypasses
+          # raw.githubusercontent.com branch cache). workflow_dispatch /
+          # schedule fall back to `main`.
           SOURCE_COMMIT: ${{ github.event.client_payload.source_commit }}
         run: |
           REF="${SOURCE_COMMIT:-main}"
           echo "Fetching spec at ref=$REF"
           curl -sSfL \
             "https://raw.githubusercontent.com/amilcarrey/openapi-trigger-faker/${REF}/openapi.json" \
-            -o /tmp/openapi-faker.new.json
+            -o openapi-faker.new.json
 
-      - name: Classify diff with oasdiff
-        id: classify
+      - name: Check for breaking changes (oasdiff)
+        id: breaking
+        uses: oasdiff/oasdiff-action/breaking@v0.0.47
+        continue-on-error: true
+        with:
+          base: ./specs/openapi-faker.json
+          revision: ./openapi-faker.new.json
+          fail-on: ERR
+
+      - name: Generate changelog (oasdiff)
+        uses: oasdiff/oasdiff-action/changelog@v0.0.47
+        continue-on-error: true
+        with:
+          base: ./specs/openapi-faker.json
+          revision: ./openapi-faker.new.json
+          format: markup
+          output-to-file: ./oasdiff-changelog.md
+
+      - name: Detect structural diff (to tell minor from patch)
+        id: structural
+        uses: oasdiff/oasdiff-action/diff@v0.0.47
+        continue-on-error: true
+        with:
+          base: ./specs/openapi-faker.json
+          revision: ./openapi-faker.new.json
+          format: text
+          output-to-file: ./oasdiff-diff.txt
+
+      - name: Decide classification + next version
+        id: decide
         run: |
-          set +e
-          docker run --rm \
-            -v "$PWD/specs:/specs" \
-            -v /tmp:/tmp \
-            tufin/oasdiff:latest breaking \
-              /specs/openapi-faker.json \
-              /tmp/openapi-faker.new.json \
-              --fail-on ERR 2>&1
-          breaking_exit=$?
-
-          # Full changelog (markup) — used in PR body + CHANGELOG.md
-          docker run --rm \
-            -v "$PWD/specs:/specs" \
-            -v /tmp:/tmp \
-            tufin/oasdiff:latest changelog \
-              /specs/openapi-faker.json \
-              /tmp/openapi-faker.new.json \
-              --format markup > /tmp/oasdiff-changelog.md 2>/dev/null || true
-          set -e
-
-          if [ $breaking_exit -ne 0 ]; then
-            echo "classification=breaking" >> "$GITHUB_OUTPUT"
-            echo "::notice::oasdiff detected BREAKING changes"
+          if [ "${{ steps.breaking.outcome }}" = "failure" ]; then
+            classification=breaking
+            bump=major
+          elif [ -s ./oasdiff-diff.txt ]; then
+            classification=minor
+            bump=minor
           else
-            diff_out=$(docker run --rm \
-              -v "$PWD/specs:/specs" \
-              -v /tmp:/tmp \
-              tufin/oasdiff:latest diff \
-                /specs/openapi-faker.json \
-                /tmp/openapi-faker.new.json \
-                --exclude-elements description,examples,title,summary 2>/dev/null || true)
-
-            if [ -z "$diff_out" ]; then
-              echo "classification=patch" >> "$GITHUB_OUTPUT"
-              echo "::notice::oasdiff: doc-only changes"
-            else
-              echo "classification=minor" >> "$GITHUB_OUTPUT"
-              echo "::notice::oasdiff: non-breaking structural changes"
-            fi
+            classification=patch
+            bump=patch
           fi
+          echo "::notice::oasdiff classification: $classification"
+
+          current=$(jq -r .version package.json)
+          # Compute the next semver (without writing to disk; the regenerate
+          # job will do `npm version <bump>`).
+          IFS=. read -r maj min pat <<<"$current"
+          case "$bump" in
+            major) new="$((maj+1)).0.0" ;;
+            minor) new="${maj}.$((min+1)).0" ;;
+            patch) new="${maj}.${min}.$((pat+1))" ;;
+          esac
+
+          echo "classification=$classification" >> "$GITHUB_OUTPUT"
+          echo "new_version=$new" >> "$GITHUB_OUTPUT"
+          echo "::notice::next version: v$new ($bump)"
+
+      - name: Upload classify artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: classify-output
+          path: |
+            openapi-faker.new.json
+            oasdiff-changelog.md
+          retention-days: 1
+
+  # ────────────────────────────────────────────────────────────────────────
+  # 2) Regenerate the SDK against the new spec, bump version, update CHANGELOG.
+  # ────────────────────────────────────────────────────────────────────────
+  regenerate:
+    name: Regenerate SDK + bump version
+    needs: classify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: classify-output
 
       - name: Update cached spec snapshot
-        run: cp /tmp/openapi-faker.new.json specs/openapi-faker.json
+        run: cp openapi-faker.new.json specs/openapi-faker.json
 
       - uses: pnpm/action-setup@v4
 
@@ -104,36 +143,33 @@ jobs:
       - name: Verify typecheck still passes
         run: pnpm typecheck
 
-      - name: Bump package version + prepend CHANGELOG entry
-        id: bump
+      - name: Bump package version
         env:
-          CLASSIFICATION: ${{ steps.classify.outputs.classification }}
+          CLASSIFICATION: ${{ needs.classify.outputs.classification }}
         run: |
-          # Map oasdiff classification to semver bump
           case "$CLASSIFICATION" in
-            breaking) bump="major" ;;
-            minor)    bump="minor" ;;
-            patch)    bump="patch" ;;
-            *)        echo "::error::unknown classification: $CLASSIFICATION"; exit 1 ;;
+            breaking) bump=major ;;
+            minor)    bump=minor ;;
+            patch)    bump=patch ;;
           esac
+          npm version "$bump" --no-git-tag-version
 
-          # `npm version` without git tag — peter-evans commits this in the PR
-          new_version=$(npm version "$bump" --no-git-tag-version)
-          new_version="${new_version#v}"
-          echo "new_version=$new_version" >> "$GITHUB_OUTPUT"
-          echo "::notice::Bumped to v${new_version} (${bump})"
-
+      - name: Prepend CHANGELOG entry
+        env:
+          CLASSIFICATION: ${{ needs.classify.outputs.classification }}
+          NEW_VERSION: ${{ needs.classify.outputs.new_version }}
+        run: |
           today="$(date -u +%Y-%m-%d)"
-          changelog="$(cat /tmp/oasdiff-changelog.md 2>/dev/null)"
+          changelog="$(cat oasdiff-changelog.md 2>/dev/null)"
           if [ -z "${changelog// }" ]; then
             changelog="_(no structural changes detected by oasdiff)_"
           fi
 
           # Compose new CHANGELOG.md: keep file header, insert new release
-          # entry at the top of the releases list, drop `## [Unreleased]`.
+          # entry, drop the `## [Unreleased]` placeholder.
           {
             awk '/^## / { exit } { print }' CHANGELOG.md
-            echo "## [${new_version}] - ${today} (${bump})"
+            echo "## [${NEW_VERSION}] - ${today} (${CLASSIFICATION})"
             echo ""
             echo '```'
             echo "${changelog}"
@@ -148,19 +184,58 @@ jobs:
               skip { next }
               { print }
             ' CHANGELOG.md
-          } > /tmp/CHANGELOG.new.md
-          mv /tmp/CHANGELOG.new.md CHANGELOG.md
+          } > CHANGELOG.new.md
+          mv CHANGELOG.new.md CHANGELOG.md
+
+      - name: Upload regenerated tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerate-output
+          # Catch all touched files; create-pull-request still filters via add-paths.
+          path: |
+            package.json
+            CHANGELOG.md
+            specs/openapi-faker.json
+            src/client-v1/**
+            src/client-v2/**
+            src/client-faker/**
+          retention-days: 1
+
+  # ────────────────────────────────────────────────────────────────────────
+  # 3) Open / update the PR with the regenerated tree. Auto-merge if non-breaking.
+  # ────────────────────────────────────────────────────────────────────────
+  open-pr:
+    name: Open PR + auto-merge
+    needs: [classify, regenerate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: classify-output
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: regenerate-output
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create auto-merge --color 0e8a16 --description "Non-breaking sync, merges itself" --force
+          gh label create needs-review --color d93f0b --description "Breaking change detected by oasdiff" --force
 
       - name: Build PR body
         id: body
         env:
-          CLASSIFICATION: ${{ steps.classify.outputs.classification }}
-          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+          CLASSIFICATION: ${{ needs.classify.outputs.classification }}
+          NEW_VERSION: ${{ needs.classify.outputs.new_version }}
           EVENT_NAME: ${{ github.event_name }}
           SOURCE_COMMIT: ${{ github.event.client_payload.source_commit }}
           SPEC_SHA: ${{ github.event.client_payload.spec_sha }}
         run: |
-          changelog="$(cat /tmp/oasdiff-changelog.md 2>/dev/null || echo '_(no changelog produced)_')"
+          changelog="$(cat oasdiff-changelog.md 2>/dev/null)"
           if [ -z "${changelog// }" ]; then
             changelog="_(no structural changes detected by oasdiff)_"
           fi
@@ -197,16 +272,16 @@ jobs:
             echo "PR_BODY_EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create Pull Request if SDK changed
+      - name: Create or update PR
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "chore(sdk): release v${{ steps.bump.outputs.new_version }} (${{ steps.classify.outputs.classification }})"
-          title: "chore(sdk): release v${{ steps.bump.outputs.new_version }} [${{ steps.classify.outputs.classification }}]"
+          commit-message: "chore(sdk): release v${{ needs.classify.outputs.new_version }} (${{ needs.classify.outputs.classification }})"
+          title: "chore(sdk): release v${{ needs.classify.outputs.new_version }} [${{ needs.classify.outputs.classification }}]"
           body: ${{ steps.body.outputs.body }}
           branch: chore/sync-sdk
           delete-branch: true
-          labels: ${{ steps.classify.outputs.classification == 'breaking' && 'needs-review' || 'auto-merge' }}
+          labels: ${{ needs.classify.outputs.classification == 'breaking' && 'needs-review' || 'auto-merge' }}
           add-paths: |
             package.json
             CHANGELOG.md
@@ -216,7 +291,7 @@ jobs:
             src/client-faker/**
 
       - name: Enable auto-merge for non-breaking PR
-        if: steps.cpr.outputs.pull-request-number && steps.classify.outputs.classification != 'breaking'
+        if: steps.cpr.outputs.pull-request-number && needs.classify.outputs.classification != 'breaking'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}"
