@@ -4,6 +4,7 @@ export {
   createItem,
   getItem,
   listItems,
+  listSprockets,
   listWidgets,
   type Options,
 } from "./sdk.gen";
@@ -21,6 +22,9 @@ export type {
   ListItemsData,
   ListItemsResponse,
   ListItemsResponses,
+  ListSprocketsData,
+  ListSprocketsResponse,
+  ListSprocketsResponses,
   ListWidgetsData,
   ListWidgetsResponse,
   ListWidgetsResponses,

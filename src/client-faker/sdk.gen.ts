@@ -10,6 +10,8 @@ import type {
   GetItemResponses,
   ListItemsData,
   ListItemsResponses,
+  ListSprocketsData,
+  ListSprocketsResponses,
   ListWidgetsData,
   ListWidgetsResponses,
 } from "./types.gen";
@@ -78,3 +80,15 @@ export const listWidgets = <ThrowOnError extends boolean = false>(
     url: "/v1/widgets",
     ...options,
   });
+
+/**
+ * Auto-added listSprockets
+ */
+export const listSprockets = <ThrowOnError extends boolean = false>(
+  options?: Options<ListSprocketsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<
+    ListSprocketsResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/v1/sprockets", ...options });

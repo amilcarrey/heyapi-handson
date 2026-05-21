@@ -89,3 +89,22 @@ export type ListWidgetsResponses = {
 
 export type ListWidgetsResponse =
   ListWidgetsResponses[keyof ListWidgetsResponses];
+
+export type ListSprocketsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/v1/sprockets";
+};
+
+export type ListSprocketsResponses = {
+  /**
+   * OK
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type ListSprocketsResponse =
+  ListSprocketsResponses[keyof ListSprocketsResponses];
