@@ -29,9 +29,16 @@ jobs:
           gh label create needs-review --color d93f0b --description "Breaking change detectado por oasdiff" --force
 
       - name: Download fresh faker spec
+        env:
+          # Si el trigger es repository_dispatch, viene con el SHA del commit
+          # del faker → bajamos por SHA (URL inmutable, esquiva cache CDN de
+          # la branch). Para workflow_dispatch/schedule cae a `main`.
+          SOURCE_COMMIT: ${{ github.event.client_payload.source_commit }}
         run: |
+          REF="${SOURCE_COMMIT:-main}"
+          echo "Fetching spec at ref=$REF"
           curl -sSfL \
-            https://raw.githubusercontent.com/amilcarrey/openapi-trigger-faker/main/openapi.json \
+            "https://raw.githubusercontent.com/amilcarrey/openapi-trigger-faker/${REF}/openapi.json" \
             -o /tmp/openapi-faker.new.json
 
       - name: Classify diff with oasdiff

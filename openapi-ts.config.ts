@@ -120,11 +120,11 @@ export default defineConfig([
   },
 
   // ─── Faker spec (sandbox cross-repo regen) ─────────────────────────────
-  // Apunta al openapi.json sintético de openapi-trigger-faker. Cuando mutamos
-  // el spec ahí, este entry produce el diff que dispara el PR auto-generado.
+  // Lee el snapshot local en `specs/openapi-faker.json`. El workflow lo
+  // refresca contra raw.githubusercontent.com/.../<sha>/openapi.json antes
+  // del codegen — pinear por SHA esquiva la cache CDN de la branch.
   {
-    input:
-      "https://raw.githubusercontent.com/amilcarrey/openapi-trigger-faker/main/openapi.json",
+    input: "./specs/openapi-faker.json",
     output: { path: "./src/client-faker", format: "prettier" },
     plugins: ["@hey-api/client-fetch", sdkPlugin, typescriptPlugin, zodPlugin],
   },
