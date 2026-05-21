@@ -19,13 +19,8 @@ import {
   verifyTracking,
 } from "../sdk/actions.gen";
 import { getWalletActivity } from "../sdk/activity.gen";
-import { getDeposits } from "../sdk/deposits.gen";
-import {
-  getEarnRoute,
-  getEarnSwap,
-  getSwapDetails,
-  getSwapTokens,
-} from "../sdk/earn.gen";
+import { getDistributorDeposits } from "../sdk/deposits.gen";
+import { getEarnSwap, getSwapDetails, getSwapTokens } from "../sdk/earn.gen";
 import {
   createMembershipAgreement,
   getMembership,
@@ -37,6 +32,7 @@ import {
   getOpportunityById,
 } from "../sdk/opportunities.gen";
 import {
+  turtleStreamsGetMerkleProofs,
   v1StreamsCreatePoint,
   v1StreamsCreateStream,
   v1StreamsGetPoints,
@@ -64,12 +60,9 @@ import type {
   CreateWithdrawInteractionData,
   CreateWithdrawInteractionError,
   CreateWithdrawInteractionResponse,
-  GetDepositsData,
-  GetDepositsError,
-  GetDepositsResponse,
-  GetEarnRouteData,
-  GetEarnRouteError,
-  GetEarnRouteResponse,
+  GetDistributorDepositsData,
+  GetDistributorDepositsError,
+  GetDistributorDepositsResponse,
   GetEarnSwapData,
   GetEarnSwapError,
   GetEarnSwapResponse,
@@ -96,6 +89,9 @@ import type {
   MembershipCreateData,
   MembershipCreateError,
   MembershipCreateResponse,
+  TurtleStreamsGetMerkleProofsHandlerData,
+  TurtleStreamsGetMerkleProofsHandlerError,
+  TurtleStreamsGetMerkleProofsHandlerResponse,
   V1StreamsCreatePointHandlerData,
   V1StreamsCreatePointHandlerError,
   V1StreamsCreatePointHandlerResponse,
@@ -334,23 +330,26 @@ export const createWithdrawInteractionMutation = (
   return mutationOptions;
 };
 
-export const getDepositsQueryKey = (options: Options<GetDepositsData>) =>
-  createQueryKey("getDeposits", options);
+export const getDistributorDepositsQueryKey = (
+  options: Options<GetDistributorDepositsData>,
+) => createQueryKey("getDistributorDeposits", options);
 
 /**
- * Get Deposits Handler
+ * Get Distributor Deposits Handler
  *
- * Get deposit transactions for a specific distributor
+ * Get paginated verified deposit interactions for a specific distributor, ordered by date descending. Optionally filter by opportunity_id and/or product_id.
  */
-export const getDepositsOptions = (options: Options<GetDepositsData>) =>
+export const getDistributorDepositsOptions = (
+  options: Options<GetDistributorDepositsData>,
+) =>
   queryOptions<
-    GetDepositsResponse,
-    GetDepositsError,
-    GetDepositsResponse,
-    ReturnType<typeof getDepositsQueryKey>
+    GetDistributorDepositsResponse,
+    GetDistributorDepositsError,
+    GetDistributorDepositsResponse,
+    ReturnType<typeof getDistributorDepositsQueryKey>
   >({
     queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getDeposits({
+      const { data } = await getDistributorDeposits({
         ...options,
         ...queryKey[0],
         signal,
@@ -358,7 +357,7 @@ export const getDepositsOptions = (options: Options<GetDepositsData>) =>
       });
       return data;
     },
-    queryKey: getDepositsQueryKey(options),
+    queryKey: getDistributorDepositsQueryKey(options),
   });
 
 const createInfiniteParams = <
@@ -395,26 +394,27 @@ const createInfiniteParams = <
   return params as unknown as typeof page;
 };
 
-export const getDepositsInfiniteQueryKey = (
-  options: Options<GetDepositsData>,
-): QueryKey<Options<GetDepositsData>> =>
-  createQueryKey("getDeposits", options, true);
+export const getDistributorDepositsInfiniteQueryKey = (
+  options: Options<GetDistributorDepositsData>,
+): QueryKey<Options<GetDistributorDepositsData>> =>
+  createQueryKey("getDistributorDeposits", options, true);
 
 /**
- * Get Deposits Handler
+ * Get Distributor Deposits Handler
  *
- * Get deposit transactions for a specific distributor
+ * Get paginated verified deposit interactions for a specific distributor, ordered by date descending. Optionally filter by opportunity_id and/or product_id.
  */
-export const getDepositsInfiniteOptions = (options: Options<GetDepositsData>) =>
+export const getDistributorDepositsInfiniteOptions = (
+  options: Options<GetDistributorDepositsData>,
+) =>
   infiniteQueryOptions<
-    GetDepositsResponse,
-    GetDepositsError,
-    InfiniteData<GetDepositsResponse>,
-    QueryKey<Options<GetDepositsData>>,
-    | null
+    GetDistributorDepositsResponse,
+    GetDistributorDepositsError,
+    InfiniteData<GetDistributorDepositsResponse>,
+    QueryKey<Options<GetDistributorDepositsData>>,
     | number
     | Pick<
-        QueryKey<Options<GetDepositsData>>[0],
+        QueryKey<Options<GetDistributorDepositsData>>[0],
         "body" | "headers" | "path" | "query"
       >
   >(
@@ -423,18 +423,18 @@ export const getDepositsInfiniteOptions = (options: Options<GetDepositsData>) =>
       queryFn: async ({ pageParam, queryKey, signal }) => {
         // @ts-ignore
         const page: Pick<
-          QueryKey<Options<GetDepositsData>>[0],
+          QueryKey<Options<GetDistributorDepositsData>>[0],
           "body" | "headers" | "path" | "query"
         > =
           typeof pageParam === "object"
             ? pageParam
             : {
                 query: {
-                  offset: pageParam,
+                  page: pageParam,
                 },
               };
         const params = createInfiniteParams(queryKey, page);
-        const { data } = await getDeposits({
+        const { data } = await getDistributorDeposits({
           ...options,
           ...params,
           signal,
@@ -442,7 +442,7 @@ export const getDepositsInfiniteOptions = (options: Options<GetDepositsData>) =>
         });
         return data;
       },
-      queryKey: getDepositsInfiniteQueryKey(options),
+      queryKey: getDistributorDepositsInfiniteQueryKey(options),
     },
   );
 
@@ -621,33 +621,6 @@ export const getOpportunityByIdOptions = (
     queryKey: getOpportunityByIdQueryKey(options),
   });
 
-export const getEarnRouteQueryKey = (options: Options<GetEarnRouteData>) =>
-  createQueryKey("getEarnRoute", options);
-
-/**
- * Get Route Handler
- *
- * Get optimal trading route from Enso API for earn widget
- */
-export const getEarnRouteOptions = (options: Options<GetEarnRouteData>) =>
-  queryOptions<
-    GetEarnRouteResponse,
-    GetEarnRouteError,
-    GetEarnRouteResponse,
-    ReturnType<typeof getEarnRouteQueryKey>
-  >({
-    queryFn: async ({ queryKey, signal }) => {
-      const { data } = await getEarnRoute({
-        ...options,
-        ...queryKey[0],
-        signal,
-        throwOnError: true,
-      });
-      return data;
-    },
-    queryKey: getEarnRouteQueryKey(options),
-  });
-
 export const v1StreamsGetStreamsHandlerQueryKey = (
   options?: Options<V1StreamsGetStreamsHandlerData>,
 ) => createQueryKey("v1StreamsGetStreamsHandler", options);
@@ -706,6 +679,45 @@ export const v1StreamsCreateStreamHandlerMutation = (
   };
   return mutationOptions;
 };
+
+export const turtleStreamsGetMerkleProofsHandlerQueryKey = (
+  options: Options<TurtleStreamsGetMerkleProofsHandlerData>,
+) => createQueryKey("turtleStreamsGetMerkleProofsHandler", options);
+
+/**
+ * Get Merkle Proofs for Wallet
+ *
+ * Retrieve Merkle proofs for a wallet address across multiple streams.
+ *
+ * The endpoint returns proofs for the latest snapshot with a committed root hash for each stream.
+ * The proofs can be used to claim rewards on-chain.
+ *
+ * **Caching Strategy:**
+ * 1. Check local in-memory LRU cache (LRU eviction ensures memory stays bounded)
+ * 2. If not in cache, check Redis
+ * 3. If not in Redis, rebuild from database
+ * 4. Validate root hash matches the database value
+ */
+export const turtleStreamsGetMerkleProofsHandlerOptions = (
+  options: Options<TurtleStreamsGetMerkleProofsHandlerData>,
+) =>
+  queryOptions<
+    TurtleStreamsGetMerkleProofsHandlerResponse,
+    TurtleStreamsGetMerkleProofsHandlerError,
+    TurtleStreamsGetMerkleProofsHandlerResponse,
+    ReturnType<typeof turtleStreamsGetMerkleProofsHandlerQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await turtleStreamsGetMerkleProofs({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: turtleStreamsGetMerkleProofsHandlerQueryKey(options),
+  });
 
 export const v1StreamsGetPointsHandlerQueryKey = (
   options?: Options<V1StreamsGetPointsHandlerData>,

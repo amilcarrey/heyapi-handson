@@ -3,21 +3,21 @@
 import { client } from "../client.gen";
 import type { Options } from "../sdk.gen";
 import type {
-  GetDepositsData,
-  GetDepositsErrors,
-  GetDepositsResponses,
+  GetDistributorDepositsData,
+  GetDistributorDepositsErrors,
+  GetDistributorDepositsResponses,
 } from "../types.gen";
 
 /**
- * Get Deposits Handler
+ * Get Distributor Deposits Handler
  *
- * Get deposit transactions for a specific distributor
+ * Get paginated verified deposit interactions for a specific distributor, ordered by date descending. Optionally filter by opportunity_id and/or product_id.
  */
-export const getDeposits = <ThrowOnError extends boolean = false>(
-  options: Options<GetDepositsData, ThrowOnError>,
+export const getDistributorDeposits = <ThrowOnError extends boolean = false>(
+  options: Options<GetDistributorDepositsData, ThrowOnError>,
 ) =>
   (options.client ?? client).get<
-    GetDepositsResponses,
-    GetDepositsErrors,
+    GetDistributorDepositsResponses,
+    GetDistributorDepositsErrors,
     ThrowOnError
   >({ url: "/v1/deposit/{distributor_id}", ...options });

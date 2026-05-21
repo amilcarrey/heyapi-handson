@@ -279,12 +279,6 @@ export type V1GetSwapDetailsResponse = {
   popularTokens?: Array<V1SwapToken> | null;
 };
 
-export type V1GetRouteResponse = {
-  data?: unknown;
-  error?: string;
-  exp?: number;
-};
-
 export type V1GetOpportunityByIdResponse = {
   /**
    * Opportunity details
@@ -390,64 +384,6 @@ export type V1GetMembershipOutput = {
    * Whether the wallet is associated with a user
    */
   isMember?: boolean;
-};
-
-export type V1GetDepositsResponse = {
-  /**
-   * List of deposit transactions
-   */
-  deposits?: Array<V1DepositDto> | null;
-};
-
-export type V1DepositDto = {
-  /**
-   * Chain ID where deposit occurred
-   */
-  chain?: number;
-  /**
-   * USD value of deposit at time of transaction
-   */
-  deposited_amount_usd?: string;
-  /**
-   * Contract address of deposited token
-   */
-  deposited_token_address?: string;
-  /**
-   * Decimal places of deposited token
-   */
-  deposited_token_decimals?: number;
-  /**
-   * Logo URL of deposited token
-   */
-  deposited_token_logo?: string;
-  /**
-   * Full name of deposited token
-   */
-  deposited_token_name?: string;
-  /**
-   * Symbol of deposited token
-   */
-  deposited_token_symbol?: string;
-  /**
-   * Amount deposited in token units
-   */
-  deposited_value?: string;
-  /**
-   * Wallet address that made the deposit
-   */
-  depositor?: string;
-  /**
-   * Target contract or vault address
-   */
-  target?: string;
-  /**
-   * ISO timestamp of deposit transaction
-   */
-  timestamp?: string;
-  /**
-   * Transaction hash on blockchain
-   */
-  tx_hash?: string;
 };
 
 export type V1CreateMembershipOutput = {
@@ -618,6 +554,17 @@ export type StreamsStream = {
   userId?: UuidUuid;
 };
 
+export type StreamsStreamMerkleProof = {
+  amount?: null | string;
+  chainId?: null | number;
+  contractAddress?: string;
+  error?: string;
+  proof?: Array<string>;
+  rootHash?: string;
+  streamId?: UuidUuid;
+  timestamp?: null | string;
+};
+
 export type StreamsIStreamFactoryCreateStreamParams = {
   [key: string]: unknown;
 };
@@ -641,6 +588,10 @@ export type StreamsGetStreamsOutput = {
 
 export type StreamsGetPointsOutput = {
   points?: Array<StreamsPoint> | null;
+};
+
+export type StreamsGetMerkleProofsOutput = {
+  proofs?: Array<StreamsStreamMerkleProof> | null;
 };
 
 export type StreamsCreateStreamTxParams = {
@@ -815,6 +766,11 @@ export type ActionsInteractionRequest = {
    * User wallet address (validated by middleware)
    */
   userAddress: string;
+};
+
+export type ActionsDistributorDepositsResponse = {
+  deposits?: Array<ActionsWalletActivityItem> | null;
+  pagination?: UtilsPaginationResponse;
 };
 
 export type ActionsClaimDepositRequest = {
@@ -1109,7 +1065,7 @@ export type CreateWithdrawInteractionResponses = {
 export type CreateWithdrawInteractionResponse =
   CreateWithdrawInteractionResponses[keyof CreateWithdrawInteractionResponses];
 
-export type GetDepositsData = {
+export type GetDistributorDepositsData = {
   body?: never;
   path: {
     /**
@@ -1118,23 +1074,25 @@ export type GetDepositsData = {
     distributor_id: string;
   };
   query?: {
+    page?: number;
+    limit?: number;
     /**
-     * Filter by depositor wallet address
+     * Optional opportunity UUID to filter deposits
      */
-    depositor?: null | string;
+    opportunity_id?: string;
     /**
-     * Maximum number of deposits to return (default: 100, max: 2000)
+     * Optional product UUID to filter deposits to opportunities belonging to that product
      */
-    limit?: null | number;
-    /**
-     * Number of deposits to skip for pagination
-     */
-    offset?: null | number;
+    product_id?: string;
   };
   url: "/v1/deposit/{distributor_id}";
 };
 
-export type GetDepositsErrors = {
+export type GetDistributorDepositsErrors = {
+  /**
+   * Bad Request
+   */
+  400: RestErrResponse;
   /**
    * Not Found
    */
@@ -1145,17 +1103,18 @@ export type GetDepositsErrors = {
   500: RestErrResponse;
 };
 
-export type GetDepositsError = GetDepositsErrors[keyof GetDepositsErrors];
+export type GetDistributorDepositsError =
+  GetDistributorDepositsErrors[keyof GetDistributorDepositsErrors];
 
-export type GetDepositsResponses = {
+export type GetDistributorDepositsResponses = {
   /**
    * OK
    */
-  200: V1GetDepositsResponse;
+  200: ActionsDistributorDepositsResponse;
 };
 
-export type GetDepositsResponse =
-  GetDepositsResponses[keyof GetDepositsResponses];
+export type GetDistributorDepositsResponse =
+  GetDistributorDepositsResponses[keyof GetDistributorDepositsResponses];
 
 export type GetMembershipData = {
   body?: never;
@@ -1353,73 +1312,6 @@ export type GetOpportunityByIdResponses = {
 export type GetOpportunityByIdResponse =
   GetOpportunityByIdResponses[keyof GetOpportunityByIdResponses];
 
-export type GetEarnRouteData = {
-  body?: never;
-  path?: never;
-  query: {
-    /**
-     * The user's EOA address initiating the transaction
-     */
-    user: string;
-    /**
-     * The chain ID for the transaction
-     */
-    chain: number;
-    /**
-     * Acceptable slippage tolerance (0.001-0.5)
-     */
-    slippage: number;
-    /**
-     * Input token address or 'native'
-     */
-    token_in: string;
-    /**
-     * Output token address
-     */
-    token_out: string;
-    /**
-     * Amount to trade in smallest unit
-     */
-    amount: string;
-    /**
-     * Distributor ID for the transaction
-     */
-    distributor_id: string;
-    /**
-     * Optional referral code
-     */
-    referral_code?: string;
-  };
-  url: "/v1/route/";
-};
-
-export type GetEarnRouteErrors = {
-  /**
-   * Bad Request
-   */
-  400: RestErrResponse;
-  /**
-   * Not Found
-   */
-  404: RestErrResponse;
-  /**
-   * Internal Server Error
-   */
-  500: RestErrResponse;
-};
-
-export type GetEarnRouteError = GetEarnRouteErrors[keyof GetEarnRouteErrors];
-
-export type GetEarnRouteResponses = {
-  /**
-   * OK
-   */
-  200: V1GetRouteResponse;
-};
-
-export type GetEarnRouteResponse =
-  GetEarnRouteResponses[keyof GetEarnRouteResponses];
-
 export type V1StreamsGetStreamsHandlerData = {
   body?: never;
   path?: never;
@@ -1493,6 +1385,40 @@ export type V1StreamsCreateStreamHandlerResponses = {
 
 export type V1StreamsCreateStreamHandlerResponse =
   V1StreamsCreateStreamHandlerResponses[keyof V1StreamsCreateStreamHandlerResponses];
+
+export type TurtleStreamsGetMerkleProofsHandlerData = {
+  body?: never;
+  path?: never;
+  query: {
+    wallet: string;
+    streamIds: Array<UuidUuid> | null;
+  };
+  url: "/v1/streams/merkle_proofs";
+};
+
+export type TurtleStreamsGetMerkleProofsHandlerErrors = {
+  /**
+   * Bad Request
+   */
+  400: RestErrResponse;
+  /**
+   * Internal Server Error
+   */
+  500: RestErrResponse;
+};
+
+export type TurtleStreamsGetMerkleProofsHandlerError =
+  TurtleStreamsGetMerkleProofsHandlerErrors[keyof TurtleStreamsGetMerkleProofsHandlerErrors];
+
+export type TurtleStreamsGetMerkleProofsHandlerResponses = {
+  /**
+   * OK
+   */
+  200: StreamsGetMerkleProofsOutput;
+};
+
+export type TurtleStreamsGetMerkleProofsHandlerResponse =
+  TurtleStreamsGetMerkleProofsHandlerResponses[keyof TurtleStreamsGetMerkleProofsHandlerResponses];
 
 export type V1StreamsGetPointsHandlerData = {
   body?: never;
