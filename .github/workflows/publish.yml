@@ -1,14 +1,20 @@
 name: Publish to npm
 
-# Runs on every push to main that touches package.json. The job exits early
-# if the version field didn't change — so dependency bumps don't trigger a
-# release.
+# Triggers:
+# - workflow_run after Sync SDK completes successfully on main. We can't use
+#   `push: paths: package.json` because PRs merged with the default GITHUB_TOKEN
+#   do not fire push events (GitHub's anti-loop rule).
+# - workflow_dispatch for manual re-publish (e.g. recover from a missed run).
+#
+# The "Detect version change" step compares HEAD vs HEAD~1 and exits early
+# if package.json version is unchanged, so non-release merges are no-ops.
 
 on:
-  push:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Sync SDK from OpenAPI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "package.json"
 
 permissions:
   contents: write # to create the release tag
@@ -16,11 +22,15 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
         with:
           # Need at least 2 commits to diff package.json
           fetch-depth: 2
+          # Force main HEAD — workflow_run defaults to the SHA of the upstream
+          # run, which may pre-date the merge commit produced by auto-merge.
+          ref: main
 
       - name: Detect version change
         id: detect
