@@ -15,8 +15,12 @@ const cleanOperationName = (name: string): string =>
     .replace(/Handler$/, "");
 
 // Plugin SDK reutilizable: tree-shakeable (flat) con renombrado.
+// `validator: true` engancha el validator instalado (zod) — cada función del
+// SDK valida request input y response payload en runtime. Sin esto, generar
+// schemas zod sería decorativo.
 const sdkPlugin = {
   name: "@hey-api/sdk" as const,
+  validator: true as const,
   operations: {
     strategy: "flat" as const,
     methodName: {
