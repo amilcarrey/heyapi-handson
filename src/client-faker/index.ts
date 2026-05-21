@@ -2,7 +2,6 @@
 
 export {
   createItem,
-  getItem,
   listItems,
   listSprockets,
   listWidgets,
@@ -13,10 +12,6 @@ export type {
   CreateItemData,
   CreateItemResponse,
   CreateItemResponses,
-  GetItemData,
-  GetItemErrors,
-  GetItemResponse,
-  GetItemResponses,
   Item,
   ItemInput,
   ListItemsData,

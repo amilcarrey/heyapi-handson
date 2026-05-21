@@ -5,9 +5,6 @@ import { client } from "./client.gen";
 import type {
   CreateItemData,
   CreateItemResponses,
-  GetItemData,
-  GetItemErrors,
-  GetItemResponses,
   ListItemsData,
   ListItemsResponses,
   ListSprocketsData,
@@ -59,16 +56,6 @@ export const createItem = <ThrowOnError extends boolean = false>(
       ...options.headers,
     },
   });
-
-/**
- * Get item by id
- */
-export const getItem = <ThrowOnError extends boolean = false>(
-  options: Options<GetItemData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<GetItemResponses, GetItemErrors, ThrowOnError>(
-    { url: "/v1/items/{id}", ...options },
-  );
 
 /**
  * Auto-added listWidgets

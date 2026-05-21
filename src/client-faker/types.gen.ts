@@ -46,31 +46,6 @@ export type CreateItemResponses = {
 
 export type CreateItemResponse = CreateItemResponses[keyof CreateItemResponses];
 
-export type GetItemData = {
-  body?: never;
-  path: {
-    id: string;
-  };
-  query?: never;
-  url: "/v1/items/{id}";
-};
-
-export type GetItemErrors = {
-  /**
-   * Not found
-   */
-  404: unknown;
-};
-
-export type GetItemResponses = {
-  /**
-   * OK
-   */
-  200: Item;
-};
-
-export type GetItemResponse = GetItemResponses[keyof GetItemResponses];
-
 export type ListWidgetsData = {
   body?: never;
   path?: never;

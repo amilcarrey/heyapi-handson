@@ -24,15 +24,6 @@ export const zCreateItemBody = zItemInput;
  */
 export const zCreateItemResponse = zItem;
 
-export const zGetItemPath = z.object({
-  id: z.string(),
-});
-
-/**
- * OK
- */
-export const zGetItemResponse = zItem;
-
 /**
  * OK
  */
