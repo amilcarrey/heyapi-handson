@@ -45,17 +45,16 @@ jobs:
         id: classify
         run: |
           set +e
-          # Run breaking check, capture exit + output
-          breaking_out=$(docker run --rm \
+          docker run --rm \
             -v "$PWD/specs:/specs" \
             -v /tmp:/tmp \
             tufin/oasdiff:latest breaking \
               /specs/openapi-faker.json \
               /tmp/openapi-faker.new.json \
-              --fail-on ERR 2>&1)
+              --fail-on ERR 2>&1
           breaking_exit=$?
 
-          # Full changelog (markdown) — included in PR body for either case
+          # Full changelog (markup) — used in PR body + CHANGELOG.md
           docker run --rm \
             -v "$PWD/specs:/specs" \
             -v /tmp:/tmp \
@@ -69,7 +68,6 @@ jobs:
             echo "classification=breaking" >> "$GITHUB_OUTPUT"
             echo "::notice::oasdiff detected BREAKING changes"
           else
-            # No breaking. Tell minor (structural) from patch (doc-only).
             diff_out=$(docker run --rm \
               -v "$PWD/specs:/specs" \
               -v /tmp:/tmp \
@@ -87,10 +85,77 @@ jobs:
             fi
           fi
 
+      - name: Update cached spec snapshot
+        run: cp /tmp/openapi-faker.new.json specs/openapi-faker.json
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate SDK from OpenAPI spec
+        run: pnpm codegen
+
+      - name: Verify typecheck still passes
+        run: pnpm typecheck
+
+      - name: Bump package version + prepend CHANGELOG entry
+        id: bump
+        env:
+          CLASSIFICATION: ${{ steps.classify.outputs.classification }}
+        run: |
+          # Map oasdiff classification to semver bump
+          case "$CLASSIFICATION" in
+            breaking) bump="major" ;;
+            minor)    bump="minor" ;;
+            patch)    bump="patch" ;;
+            *)        echo "::error::unknown classification: $CLASSIFICATION"; exit 1 ;;
+          esac
+
+          # `npm version` without git tag — peter-evans commits this in the PR
+          new_version=$(npm version "$bump" --no-git-tag-version)
+          new_version="${new_version#v}"
+          echo "new_version=$new_version" >> "$GITHUB_OUTPUT"
+          echo "::notice::Bumped to v${new_version} (${bump})"
+
+          today="$(date -u +%Y-%m-%d)"
+          changelog="$(cat /tmp/oasdiff-changelog.md 2>/dev/null)"
+          if [ -z "${changelog// }" ]; then
+            changelog="_(no structural changes detected by oasdiff)_"
+          fi
+
+          # Compose new CHANGELOG.md: keep file header, insert new release
+          # entry at the top of the releases list, drop `## [Unreleased]`.
+          {
+            awk '/^## / { exit } { print }' CHANGELOG.md
+            echo "## [${new_version}] - ${today} (${bump})"
+            echo ""
+            echo '```'
+            echo "${changelog}"
+            echo '```'
+            echo ""
+            awk '
+              BEGIN { started=0; skip=0 }
+              /^## / { started=1 }
+              !started { next }
+              /^## \[Unreleased\]/ { skip=1; next }
+              skip && /^## / { skip=0 }
+              skip { next }
+              { print }
+            ' CHANGELOG.md
+          } > /tmp/CHANGELOG.new.md
+          mv /tmp/CHANGELOG.new.md CHANGELOG.md
+
       - name: Build PR body
         id: body
         env:
           CLASSIFICATION: ${{ steps.classify.outputs.classification }}
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
           EVENT_NAME: ${{ github.event_name }}
           SOURCE_COMMIT: ${{ github.event.client_payload.source_commit }}
           SPEC_SHA: ${{ github.event.client_payload.spec_sha }}
@@ -109,6 +174,8 @@ jobs:
           {
             echo "body<<PR_BODY_EOF"
             echo "Auto-generated PR — the OpenAPI spec changed and the SDK has been regenerated."
+            echo ""
+            echo "**Release on merge:** \`v${NEW_VERSION}\` (\`${CLASSIFICATION}\`)"
             echo ""
             echo "${status_line}"
             echo ""
@@ -130,36 +197,19 @@ jobs:
             echo "PR_BODY_EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Update cached spec snapshot
-        run: cp /tmp/openapi-faker.new.json specs/openapi-faker.json
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Regenerate SDK from OpenAPI spec
-        run: pnpm codegen
-
-      - name: Verify typecheck still passes
-        run: pnpm typecheck
-
       - name: Create Pull Request if SDK changed
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "chore(sdk): regenerate from openapi spec (${{ steps.classify.outputs.classification }})"
-          title: "chore(sdk): sync from openapi spec [${{ steps.classify.outputs.classification }}]"
+          commit-message: "chore(sdk): release v${{ steps.bump.outputs.new_version }} (${{ steps.classify.outputs.classification }})"
+          title: "chore(sdk): release v${{ steps.bump.outputs.new_version }} [${{ steps.classify.outputs.classification }}]"
           body: ${{ steps.body.outputs.body }}
           branch: chore/sync-sdk
           delete-branch: true
           labels: ${{ steps.classify.outputs.classification == 'breaking' && 'needs-review' || 'auto-merge' }}
           add-paths: |
+            package.json
+            CHANGELOG.md
             specs/openapi-faker.json
             src/client-v1/**
             src/client-v2/**

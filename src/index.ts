@@ -20,6 +20,10 @@ export {
 // ─── v2: funciones pre-configuradas (re-export directo) ───────────────────
 export * from "./client-v2/sdk.gen";
 
+// ─── faker: SDK sintético, no requiere config (path-only base URL) ────────
+export * as faker from "./client-faker/sdk.gen";
+
 // ─── Tipos por versión, accesibles como namespaces ────────────────────────
 export * as v1 from "./client-v1/types.gen";
 export * as v2 from "./client-v2/types.gen";
+export type * as fakerTypes from "./client-faker/types.gen";

@@ -1,0 +1,78 @@
+name: Publish to npm
+
+# Runs on every push to main that touches package.json. The job exits early
+# if the version field didn't change — so dependency bumps don't trigger a
+# release.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+
+permissions:
+  contents: write # to create the release tag
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need at least 2 commits to diff package.json
+          fetch-depth: 2
+
+      - name: Detect version change
+        id: detect
+        run: |
+          old=$(git show HEAD~1:package.json 2>/dev/null | jq -r .version)
+          new=$(jq -r .version package.json)
+          echo "old=$old"
+          echo "new=$new"
+          if [ "$old" = "$new" ]; then
+            echo "::notice::Version unchanged ($new) — skipping publish"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Version changed: $old → $new"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "version=$new" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.detect.outputs.should_publish == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.detect.outputs.should_publish == 'true'
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install deps
+        if: steps.detect.outputs.should_publish == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate SDK (ensures dist matches committed spec)
+        if: steps.detect.outputs.should_publish == 'true'
+        run: pnpm codegen
+
+      - name: Build
+        if: steps.detect.outputs.should_publish == 'true'
+        run: pnpm build
+
+      - name: Publish to npm
+        if: steps.detect.outputs.should_publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # `pnpm publish` honours publishConfig.access from package.json.
+        run: pnpm publish --no-git-checks
+
+      - name: Create GitHub release tag
+        if: steps.detect.outputs.should_publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.detect.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --notes "Published to npm as \`@amilcarrey/faker-openapi-sdk@${VERSION}\`. See CHANGELOG.md for details."
