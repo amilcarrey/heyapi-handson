@@ -26,26 +26,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Need at least 2 commits to diff package.json
-          fetch-depth: 2
           # Force main HEAD — workflow_run defaults to the SHA of the upstream
           # run, which may pre-date the merge commit produced by auto-merge.
           ref: main
 
-      - name: Detect version change
+      - name: Detect publishable version
         id: detect
         run: |
-          old=$(git show HEAD~1:package.json 2>/dev/null | jq -r .version)
-          new=$(jq -r .version package.json)
-          echo "old=$old"
-          echo "new=$new"
-          if [ "$old" = "$new" ]; then
-            echo "::notice::Version unchanged ($new) — skipping publish"
+          name=$(jq -r .name package.json)
+          version=$(jq -r .version package.json)
+          echo "package=$name@$version"
+
+          # If this exact version is already on npm, skip — the registry is the
+          # source of truth, not the git diff (the publish workflow may run on
+          # a commit that doesn't itself include the bump, e.g. when retriggered).
+          if npm view "$name@$version" version --silent 2>/dev/null | grep -qx "$version"; then
+            echo "::notice::$name@$version already on npm — skipping"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::Version changed: $old → $new"
+            echo "::notice::$name@$version not on npm — will publish"
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            echo "version=$new" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: pnpm/action-setup@v4
