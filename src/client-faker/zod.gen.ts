@@ -32,3 +32,8 @@ export const zGetItemPath = z.object({
  * OK
  */
 export const zGetItemResponse = zItem;
+
+/**
+ * OK
+ */
+export const zListWidgetsResponse = z.record(z.string(), z.unknown());

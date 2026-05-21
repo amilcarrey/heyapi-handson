@@ -10,6 +10,8 @@ import type {
   GetItemResponses,
   ListItemsData,
   ListItemsResponses,
+  ListWidgetsData,
+  ListWidgetsResponses,
 } from "./types.gen";
 
 export type Options<
@@ -65,3 +67,14 @@ export const getItem = <ThrowOnError extends boolean = false>(
   (options.client ?? client).get<GetItemResponses, GetItemErrors, ThrowOnError>(
     { url: "/v1/items/{id}", ...options },
   );
+
+/**
+ * Auto-added listWidgets
+ */
+export const listWidgets = <ThrowOnError extends boolean = false>(
+  options?: Options<ListWidgetsData, ThrowOnError>,
+) =>
+  (options?.client ?? client).get<ListWidgetsResponses, unknown, ThrowOnError>({
+    url: "/v1/widgets",
+    ...options,
+  });

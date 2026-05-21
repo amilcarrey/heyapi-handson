@@ -3,9 +3,6 @@
 import { client } from "../client.gen";
 import type { Options } from "../sdk.gen";
 import type {
-  GetEarnRouteData,
-  GetEarnRouteErrors,
-  GetEarnRouteResponses,
   GetEarnSwapData,
   GetEarnSwapErrors,
   GetEarnSwapResponses,
@@ -16,20 +13,6 @@ import type {
   GetSwapTokensErrors,
   GetSwapTokensResponses,
 } from "../types.gen";
-
-/**
- * Get Route Handler
- *
- * Get optimal trading route from Enso API for earn widget
- */
-export const getEarnRoute = <ThrowOnError extends boolean = false>(
-  options: Options<GetEarnRouteData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<
-    GetEarnRouteResponses,
-    GetEarnRouteErrors,
-    ThrowOnError
-  >({ url: "/v1/route/", ...options });
 
 /**
  * Get Swap Handler
