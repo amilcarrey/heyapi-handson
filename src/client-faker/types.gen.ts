@@ -46,25 +46,6 @@ export type CreateItemResponses = {
 
 export type CreateItemResponse = CreateItemResponses[keyof CreateItemResponses];
 
-export type ListWidgetsData = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: "/v1/widgets";
-};
-
-export type ListWidgetsResponses = {
-  /**
-   * OK
-   */
-  200: {
-    [key: string]: unknown;
-  };
-};
-
-export type ListWidgetsResponse =
-  ListWidgetsResponses[keyof ListWidgetsResponses];
-
 export type ListGizmosData = {
   body?: never;
   path?: never;

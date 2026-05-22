@@ -5,7 +5,6 @@ export {
   listCogs,
   listGizmos,
   listSprocketsV2,
-  listWidgets,
   type Options,
   turtleDemo,
 } from "./sdk.gen";
@@ -25,9 +24,6 @@ export type {
   ListSprocketsV2Data,
   ListSprocketsV2Response,
   ListSprocketsV2Responses,
-  ListWidgetsData,
-  ListWidgetsResponse,
-  ListWidgetsResponses,
   TurtleDemoData,
   TurtleDemoResponse,
   TurtleDemoResponses,
