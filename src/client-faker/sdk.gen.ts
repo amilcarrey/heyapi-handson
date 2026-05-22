@@ -13,8 +13,6 @@ import type {
   ListGizmosResponses,
   ListSprocketsV2Data,
   ListSprocketsV2Responses,
-  ListWidgetsData,
-  ListWidgetsResponses,
   TurtleDemoData,
   TurtleDemoResponses,
 } from "./types.gen";
@@ -24,7 +22,6 @@ import {
   zListCogsResponse,
   zListGizmosResponse,
   zListSprocketsV2Response,
-  zListWidgetsResponse,
   zTurtleDemoResponse,
 } from "./zod.gen";
 
@@ -90,27 +87,6 @@ export const createItem = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
-  });
-
-/**
- * Auto-added listWidgets
- */
-export const listWidgets = <ThrowOnError extends boolean = false>(
-  options?: Options<ListWidgetsData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<ListWidgetsResponses, unknown, ThrowOnError>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) =>
-      await zListWidgetsResponse.parseAsync(data),
-    url: "/v1/widgets",
-    ...options,
   });
 
 /**
