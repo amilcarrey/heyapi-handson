@@ -7,7 +7,7 @@ export {
   listSprocketsV2,
   listWidgets,
   type Options,
-  turtleAmazing,
+  turtleDemo,
 } from "./sdk.gen";
 export type {
   ClientOptions,
@@ -28,7 +28,7 @@ export type {
   ListWidgetsData,
   ListWidgetsResponse,
   ListWidgetsResponses,
-  TurtleAmazingData,
-  TurtleAmazingResponse,
-  TurtleAmazingResponses,
+  TurtleDemoData,
+  TurtleDemoResponse,
+  TurtleDemoResponses,
 } from "./types.gen";

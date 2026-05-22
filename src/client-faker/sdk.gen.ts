@@ -15,8 +15,8 @@ import type {
   ListSprocketsV2Responses,
   ListWidgetsData,
   ListWidgetsResponses,
-  TurtleAmazingData,
-  TurtleAmazingResponses,
+  TurtleDemoData,
+  TurtleDemoResponses,
 } from "./types.gen";
 import {
   zCreateItemBody,
@@ -25,7 +25,7 @@ import {
   zListGizmosResponse,
   zListSprocketsV2Response,
   zListWidgetsResponse,
-  zTurtleAmazingResponse,
+  zTurtleDemoResponse,
 } from "./zod.gen";
 
 export type Options<
@@ -49,14 +49,10 @@ export type Options<
 /**
  * List items
  */
-export const turtleAmazing = <ThrowOnError extends boolean = false>(
-  options?: Options<TurtleAmazingData, ThrowOnError>,
+export const turtleDemo = <ThrowOnError extends boolean = false>(
+  options?: Options<TurtleDemoData, ThrowOnError>,
 ) =>
-  (options?.client ?? client).get<
-    TurtleAmazingResponses,
-    unknown,
-    ThrowOnError
-  >({
+  (options?.client ?? client).get<TurtleDemoResponses, unknown, ThrowOnError>({
     requestValidator: async (data) =>
       await z
         .object({
@@ -66,7 +62,7 @@ export const turtleAmazing = <ThrowOnError extends boolean = false>(
         })
         .parseAsync(data),
     responseValidator: async (data) =>
-      await zTurtleAmazingResponse.parseAsync(data),
+      await zTurtleDemoResponse.parseAsync(data),
     url: "/v1/items",
     ...options,
   });

@@ -14,22 +14,21 @@ export type ItemInput = {
   name: string;
 };
 
-export type TurtleAmazingData = {
+export type TurtleDemoData = {
   body?: never;
   path?: never;
   query?: never;
   url: "/v1/items";
 };
 
-export type TurtleAmazingResponses = {
+export type TurtleDemoResponses = {
   /**
    * OK
    */
   200: Array<Item>;
 };
 
-export type TurtleAmazingResponse =
-  TurtleAmazingResponses[keyof TurtleAmazingResponses];
+export type TurtleDemoResponse = TurtleDemoResponses[keyof TurtleDemoResponses];
 
 export type CreateItemData = {
   body: ItemInput;
