@@ -11,8 +11,6 @@ import type {
   ListCogsResponses,
   ListGizmosData,
   ListGizmosResponses,
-  ListSprocketsData,
-  ListSprocketsResponses,
   ListSprocketsV2Data,
   ListSprocketsV2Responses,
   ListWidgetsData,
@@ -25,7 +23,6 @@ import {
   zCreateItemResponse,
   zListCogsResponse,
   zListGizmosResponse,
-  zListSprocketsResponse,
   zListSprocketsV2Response,
   zListWidgetsResponse,
   zTurtleAmazingResponse,
@@ -117,31 +114,6 @@ export const listWidgets = <ThrowOnError extends boolean = false>(
     responseValidator: async (data) =>
       await zListWidgetsResponse.parseAsync(data),
     url: "/v1/widgets",
-    ...options,
-  });
-
-/**
- * Auto-added listSprockets
- */
-export const listSprockets = <ThrowOnError extends boolean = false>(
-  options?: Options<ListSprocketsData, ThrowOnError>,
-) =>
-  (options?.client ?? client).get<
-    ListSprocketsResponses,
-    unknown,
-    ThrowOnError
-  >({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) =>
-      await zListSprocketsResponse.parseAsync(data),
-    url: "/v1/sprockets",
     ...options,
   });
 
