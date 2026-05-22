@@ -2,13 +2,13 @@
 
 export {
   createItem,
-  listAllItems,
   listCogs,
   listGizmos,
   listSprockets,
   listSprocketsV2,
   listWidgets,
   type Options,
+  turtleAmazing,
 } from "./sdk.gen";
 export type {
   ClientOptions,
@@ -17,9 +17,6 @@ export type {
   CreateItemResponses,
   Item,
   ItemInput,
-  ListAllItemsData,
-  ListAllItemsResponse,
-  ListAllItemsResponses,
   ListCogsData,
   ListCogsResponse,
   ListCogsResponses,
@@ -35,4 +32,7 @@ export type {
   ListWidgetsData,
   ListWidgetsResponse,
   ListWidgetsResponses,
+  TurtleAmazingData,
+  TurtleAmazingResponse,
+  TurtleAmazingResponses,
 } from "./types.gen";

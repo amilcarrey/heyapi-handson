@@ -15,7 +15,7 @@ export const zItemInput = z.object({
 /**
  * OK
  */
-export const zListAllItemsResponse = z.array(zItem);
+export const zTurtleAmazingResponse = z.array(zItem);
 
 export const zCreateItemBody = zItemInput;
 
