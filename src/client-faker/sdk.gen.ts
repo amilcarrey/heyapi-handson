@@ -7,8 +7,6 @@ import { client } from "./client.gen";
 import type {
   CreateItemData,
   CreateItemResponses,
-  ListAllItemsData,
-  ListAllItemsResponses,
   ListCogsData,
   ListCogsResponses,
   ListGizmosData,
@@ -19,16 +17,18 @@ import type {
   ListSprocketsV2Responses,
   ListWidgetsData,
   ListWidgetsResponses,
+  TurtleAmazingData,
+  TurtleAmazingResponses,
 } from "./types.gen";
 import {
   zCreateItemBody,
   zCreateItemResponse,
-  zListAllItemsResponse,
   zListCogsResponse,
   zListGizmosResponse,
   zListSprocketsResponse,
   zListSprocketsV2Response,
   zListWidgetsResponse,
+  zTurtleAmazingResponse,
 } from "./zod.gen";
 
 export type Options<
@@ -52,25 +52,27 @@ export type Options<
 /**
  * List items
  */
-export const listAllItems = <ThrowOnError extends boolean = false>(
-  options?: Options<ListAllItemsData, ThrowOnError>,
+export const turtleAmazing = <ThrowOnError extends boolean = false>(
+  options?: Options<TurtleAmazingData, ThrowOnError>,
 ) =>
-  (options?.client ?? client).get<ListAllItemsResponses, unknown, ThrowOnError>(
-    {
-      requestValidator: async (data) =>
-        await z
-          .object({
-            body: z.never().optional(),
-            path: z.never().optional(),
-            query: z.never().optional(),
-          })
-          .parseAsync(data),
-      responseValidator: async (data) =>
-        await zListAllItemsResponse.parseAsync(data),
-      url: "/v1/items",
-      ...options,
-    },
-  );
+  (options?.client ?? client).get<
+    TurtleAmazingResponses,
+    unknown,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) =>
+      await zTurtleAmazingResponse.parseAsync(data),
+    url: "/v1/items",
+    ...options,
+  });
 
 /**
  * Create item
