@@ -554,17 +554,6 @@ export type StreamsStream = {
   userId?: UuidUuid;
 };
 
-export type StreamsStreamMerkleProof = {
-  amount?: null | string;
-  chainId?: null | number;
-  contractAddress?: string;
-  error?: string;
-  proof?: Array<string>;
-  rootHash?: string;
-  streamId?: UuidUuid;
-  timestamp?: null | string;
-};
-
 export type StreamsIStreamFactoryCreateStreamParams = {
   [key: string]: unknown;
 };
@@ -588,10 +577,6 @@ export type StreamsGetStreamsOutput = {
 
 export type StreamsGetPointsOutput = {
   points?: Array<StreamsPoint> | null;
-};
-
-export type StreamsGetMerkleProofsOutput = {
-  proofs?: Array<StreamsStreamMerkleProof> | null;
 };
 
 export type StreamsCreateStreamTxParams = {
@@ -1385,40 +1370,6 @@ export type V1StreamsCreateStreamHandlerResponses = {
 
 export type V1StreamsCreateStreamHandlerResponse =
   V1StreamsCreateStreamHandlerResponses[keyof V1StreamsCreateStreamHandlerResponses];
-
-export type TurtleStreamsGetMerkleProofsHandlerData = {
-  body?: never;
-  path?: never;
-  query: {
-    wallet: string;
-    streamIds: Array<UuidUuid> | null;
-  };
-  url: "/v1/streams/merkle_proofs";
-};
-
-export type TurtleStreamsGetMerkleProofsHandlerErrors = {
-  /**
-   * Bad Request
-   */
-  400: RestErrResponse;
-  /**
-   * Internal Server Error
-   */
-  500: RestErrResponse;
-};
-
-export type TurtleStreamsGetMerkleProofsHandlerError =
-  TurtleStreamsGetMerkleProofsHandlerErrors[keyof TurtleStreamsGetMerkleProofsHandlerErrors];
-
-export type TurtleStreamsGetMerkleProofsHandlerResponses = {
-  /**
-   * OK
-   */
-  200: StreamsGetMerkleProofsOutput;
-};
-
-export type TurtleStreamsGetMerkleProofsHandlerResponse =
-  TurtleStreamsGetMerkleProofsHandlerResponses[keyof TurtleStreamsGetMerkleProofsHandlerResponses];
 
 export type V1StreamsGetPointsHandlerData = {
   body?: never;

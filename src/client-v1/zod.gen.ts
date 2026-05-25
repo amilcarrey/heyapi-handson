@@ -306,17 +306,6 @@ export const zStreamsWalletData = z.object({
   userAddress: z.string().nullish(),
 });
 
-export const zStreamsStreamMerkleProof = z.object({
-  amount: z.string().nullish(),
-  chainId: z.int().gte(0).nullish(),
-  contractAddress: z.string().optional(),
-  error: z.string().optional(),
-  proof: z.array(z.string()).optional(),
-  rootHash: z.string().optional(),
-  streamId: zUuidUuid.optional(),
-  timestamp: z.iso.datetime().nullish(),
-});
-
 export const zStreamsIStreamFactoryCreateStreamParams = z.record(
   z.string(),
   z.unknown(),
@@ -341,10 +330,6 @@ export const zStreamsGetStreamsOutput = z.object({
 
 export const zStreamsGetPointsOutput = z.object({
   points: z.array(zStreamsPoint).nullish(),
-});
-
-export const zStreamsGetMerkleProofsOutput = z.object({
-  proofs: z.array(zStreamsStreamMerkleProof).nullish(),
 });
 
 export const zStreamsCreateStreamFuncParams = z.object({
@@ -637,17 +622,6 @@ export const zV1StreamsCreateStreamHandlerBody =
  * OK
  */
 export const zV1StreamsCreateStreamHandlerResponse = zStreamsCreateStreamOutput;
-
-export const zTurtleStreamsGetMerkleProofsHandlerQuery = z.object({
-  wallet: z.string(),
-  streamIds: z.array(zUuidUuid).nullable(),
-});
-
-/**
- * OK
- */
-export const zTurtleStreamsGetMerkleProofsHandlerResponse =
-  zStreamsGetMerkleProofsOutput;
 
 export const zV1StreamsGetPointsHandlerQuery = z.object({
   id: zUuidUuid.optional(),
