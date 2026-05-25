@@ -5,9 +5,6 @@ import * as z from "zod";
 import { client } from "../client.gen";
 import type { Options } from "../sdk.gen";
 import type {
-  TurtleStreamsGetMerkleProofsHandlerData,
-  TurtleStreamsGetMerkleProofsHandlerErrors,
-  TurtleStreamsGetMerkleProofsHandlerResponses,
   V1StreamsCreatePointHandlerData,
   V1StreamsCreatePointHandlerErrors,
   V1StreamsCreatePointHandlerResponses,
@@ -31,8 +28,6 @@ import type {
   V1StreamsGetWalletsHandlerResponses,
 } from "../types.gen";
 import {
-  zTurtleStreamsGetMerkleProofsHandlerQuery,
-  zTurtleStreamsGetMerkleProofsHandlerResponse,
   zV1StreamsCreatePointHandlerBody,
   zV1StreamsCreatePointHandlerResponse,
   zV1StreamsCreateStreamHandlerBody,
@@ -106,44 +101,6 @@ export const v1StreamsCreateStream = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options?.headers,
     },
-  });
-
-/**
- * Get Merkle Proofs for Wallet
- *
- * Retrieve Merkle proofs for a wallet address across multiple streams.
- *
- * The endpoint returns proofs for the latest snapshot with a committed root hash for each stream.
- * The proofs can be used to claim rewards on-chain.
- *
- * **Caching Strategy:**
- * 1. Check local in-memory LRU cache (LRU eviction ensures memory stays bounded)
- * 2. If not in cache, check Redis
- * 3. If not in Redis, rebuild from database
- * 4. Validate root hash matches the database value
- */
-export const turtleStreamsGetMerkleProofs = <
-  ThrowOnError extends boolean = false,
->(
-  options: Options<TurtleStreamsGetMerkleProofsHandlerData, ThrowOnError>,
-) =>
-  (options.client ?? client).get<
-    TurtleStreamsGetMerkleProofsHandlerResponses,
-    TurtleStreamsGetMerkleProofsHandlerErrors,
-    ThrowOnError
-  >({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zTurtleStreamsGetMerkleProofsHandlerQuery,
-        })
-        .parseAsync(data),
-    responseValidator: async (data) =>
-      await zTurtleStreamsGetMerkleProofsHandlerResponse.parseAsync(data),
-    url: "/v1/streams/merkle_proofs",
-    ...options,
   });
 
 /**

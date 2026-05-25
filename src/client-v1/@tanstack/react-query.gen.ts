@@ -32,7 +32,6 @@ import {
   getOpportunityById,
 } from "../sdk/opportunities.gen";
 import {
-  turtleStreamsGetMerkleProofs,
   v1StreamsCreatePoint,
   v1StreamsCreateStream,
   v1StreamsGetPoints,
@@ -89,9 +88,6 @@ import type {
   MembershipCreateData,
   MembershipCreateError,
   MembershipCreateResponse,
-  TurtleStreamsGetMerkleProofsHandlerData,
-  TurtleStreamsGetMerkleProofsHandlerError,
-  TurtleStreamsGetMerkleProofsHandlerResponse,
   V1StreamsCreatePointHandlerData,
   V1StreamsCreatePointHandlerError,
   V1StreamsCreatePointHandlerResponse,
@@ -679,45 +675,6 @@ export const v1StreamsCreateStreamHandlerMutation = (
   };
   return mutationOptions;
 };
-
-export const turtleStreamsGetMerkleProofsHandlerQueryKey = (
-  options: Options<TurtleStreamsGetMerkleProofsHandlerData>,
-) => createQueryKey("turtleStreamsGetMerkleProofsHandler", options);
-
-/**
- * Get Merkle Proofs for Wallet
- *
- * Retrieve Merkle proofs for a wallet address across multiple streams.
- *
- * The endpoint returns proofs for the latest snapshot with a committed root hash for each stream.
- * The proofs can be used to claim rewards on-chain.
- *
- * **Caching Strategy:**
- * 1. Check local in-memory LRU cache (LRU eviction ensures memory stays bounded)
- * 2. If not in cache, check Redis
- * 3. If not in Redis, rebuild from database
- * 4. Validate root hash matches the database value
- */
-export const turtleStreamsGetMerkleProofsHandlerOptions = (
-  options: Options<TurtleStreamsGetMerkleProofsHandlerData>,
-) =>
-  queryOptions<
-    TurtleStreamsGetMerkleProofsHandlerResponse,
-    TurtleStreamsGetMerkleProofsHandlerError,
-    TurtleStreamsGetMerkleProofsHandlerResponse,
-    ReturnType<typeof turtleStreamsGetMerkleProofsHandlerQueryKey>
-  >({
-    queryFn: async ({ queryKey, signal }) => {
-      const { data } = await turtleStreamsGetMerkleProofs({
-        ...options,
-        ...queryKey[0],
-        signal,
-        throwOnError: true,
-      });
-      return data;
-    },
-    queryKey: turtleStreamsGetMerkleProofsHandlerQueryKey(options),
-  });
 
 export const v1StreamsGetPointsHandlerQueryKey = (
   options?: Options<V1StreamsGetPointsHandlerData>,
