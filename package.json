@@ -1,6 +1,6 @@
 {
   "name": "@amilcarrey/faker-openapi-sdk",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Auto-generated TypeScript SDK from a synthetic OpenAPI spec (openapi-trigger-faker). Sandbox for @hey-api/openapi-ts + oasdiff + cross-repo regen.",
   "type": "module",
   "main": "./dist/index.cjs",
